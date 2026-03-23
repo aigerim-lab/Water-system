@@ -1,0 +1,521 @@
+ID,Date,Basin,Region,Pollutant,Concentration,MPC,WQI_Score,Hazard_Class
+1,2021-12-28,Esil,Akmoal,Copper,0.0004,0.001,38,2
+2,2022-05-06,Balkash-Alakol,Almaty,Nitrates,17.1526,45,44.1,1
+3,2022-05-16,Nura-Sarysu,Karaganda,Nitrates,8.1466,45,26.1,1
+4,2022-04-16,Aralo-Syrdarya,Kyzylorda,Zinc,0.0178,0.01,111,3
+5,2022-12-08,Tobyl-Torgay,Kostanay,Copper,0.0006,0.001,45,2
+6,2020-10-04,Shu-Talas,Zhambyl,Zinc,0.0271,0.01,150.5,3
+7,2022-05-14,Shu-Talas,Zhambyl,Copper,0.0026,0.001,148,2
+8,2020-12-10,Balkash-Alakol,Almaty,Nitrates,91.0125,45,114.1,1
+9,2021-03-29,Esil,Akmoal,Copper,0.0028,0.001,151,2
+10,2021-03-21,Tobyl-Torgay,Kostanay,Nitrates,14.1124,45,39.7,1
+11,2023-07-12,Balkash-Alakol,Almaty,Phenols,0.0017,0.001,100,2
+12,2023-04-09,Shu-Talas,Zhambyl,Phenols,0.003,0.001,170,2
+13,2021-03-28,Nura-Sarysu,Karaganda,Phenols,0.0015,0.001,92,2
+14,2020-05-06,Balkash-Alakol,Almaty,Phenols,0.0025,0.001,135,2
+15,2022-07-22,Nura-Sarysu,Karaganda,Phenols,0.0006,0.001,54,2
+16,2020-05-13,Zhaiyk-Kaspian,Atyrau,Phenols,0.0022,0.001,129,2
+17,2022-05-08,Tobyl-Torgay,Kostanay,Copper,0.0023,0.001,141,2
+18,2023-01-04,Nura-Sarysu,Karaganda,Sulfates,1211.1291,500,145.1,4
+19,2021-07-18,Esil,Akmoal,Phenols,0.0017,0.001,97,2
+20,2023-04-12,Nura-Sarysu,Karaganda,Zinc,0.0278,0.01,164,3
+21,2023-01-20,Shu-Talas,Zhambyl,Zinc,0.0208,0.01,124,3
+22,2023-10-06,Zhaiyk-Kaspian,Atyrau,Nitrates,60.689,45,87.4,1
+23,2020-04-25,Shu-Talas,Zhambyl,Phenols,0.0028,0.001,159,2
+24,2020-06-11,Shu-Talas,Zhambyl,Oil Products,0.0759,0.05,99.9,3
+25,2020-03-08,Zhaiyk-Kaspian,Atyrau,Oil Products,0.0112,0.05,29.2,3
+26,2020-01-02,Ertis,VKO,Nitrates,35.4976,45,56.4,1
+27,2023-04-18,Esil,Akmoal,Zinc,0.0125,0.01,72.5,3
+28,2021-03-19,Esil,Akmoal,Nitrates,23.7498,45,36.4,1
+29,2021-06-28,Nura-Sarysu,Karaganda,Nitrates,123.8831,45,166.6,1
+30,2023-08-28,Shu-Talas,Zhambyl,Oil Products,0.0389,0.05,58.9,3
+31,2022-12-03,Tobyl-Torgay,Kostanay,Nitrates,16.4496,45,37.3,1
+32,2022-12-30,Balkash-Alakol,Almaty,Sulfates,464.7068,500,60.5,4
+33,2022-12-04,Ertis,VKO,Oil Products,0.0234,0.05,51.4,3
+34,2023-11-10,Shu-Talas,Zhambyl,Sulfates,1275.9173,500,145.6,4
+35,2021-11-03,Zhaiyk-Kaspian,Atyrau,Phenols,0.0027,0.001,153,2
+36,2023-04-29,Nura-Sarysu,Karaganda,Oil Products,0.078,0.05,98,3
+37,2023-12-28,Ertis,VKO,Zinc,0.0107,0.01,83.5,3
+38,2022-11-09,Ertis,VKO,Phenols,0.0025,0.001,142,2
+39,2020-06-02,Shu-Talas,Zhambyl,Nitrates,125.1141,45,149,1
+40,2022-05-10,Tobyl-Torgay,Kostanay,Oil Products,0.1311,0.05,146.1,3
+41,2021-04-12,Nura-Sarysu,Karaganda,Nitrates,47.8845,45,69.2,1
+42,2020-05-08,Aralo-Syrdarya,Kyzylorda,Oil Products,0.1233,0.05,138.3,3
+43,2021-10-25,Aralo-Syrdarya,Kyzylorda,Nitrates,43.6468,45,69.5,1
+44,2020-10-03,Zhaiyk-Kaspian,Atyrau,Copper,0.0019,0.001,124,2
+45,2020-03-23,Zhaiyk-Kaspian,Atyrau,Sulfates,1235.9841,500,137.6,4
+46,2021-10-01,Esil,Akmoal,Oil Products,0.064,0.05,92,3
+47,2020-04-27,Ertis,VKO,Phenols,0.0023,0.001,142,2
+48,2021-01-05,Aralo-Syrdarya,Kyzylorda,Zinc,0.0119,0.01,81.5,3
+49,2022-03-30,Zhaiyk-Kaspian,Atyrau,Sulfates,985.451,500,121.5,4
+50,2020-04-11,Esil,Akmoal,Sulfates,514.3205,500,66.4,4
+51,2020-10-13,Aralo-Syrdarya,Kyzylorda,Oil Products,0.1327,0.05,146.7,3
+52,2021-07-09,Balkash-Alakol,Almaty,Oil Products,0.0409,0.05,70.9,3
+53,2023-08-27,Zhaiyk-Kaspian,Atyrau,Phenols,0.001,0.001,73,2
+54,2023-03-06,Esil,Akmoal,Oil Products,0.0887,0.05,117.7,3
+55,2023-04-18,Tobyl-Torgay,Kostanay,Zinc,0.0032,0.01,35,3
+56,2020-03-17,Esil,Akmoal,Sulfates,807.0491,500,106.7,4
+57,2023-12-02,Esil,Akmoal,Oil Products,0.0712,0.05,100.2,3
+58,2020-06-26,Tobyl-Torgay,Kostanay,Copper,0.001,0.001,68,2
+59,2023-12-12,Shu-Talas,Zhambyl,Copper,0.0014,0.001,81,2
+60,2023-01-25,Zhaiyk-Kaspian,Atyrau,Oil Products,0.1462,0.05,171.2,3
+61,2021-02-27,Zhaiyk-Kaspian,Atyrau,Nitrates,16.3747,45,32.2,1
+62,2023-04-04,Balkash-Alakol,Almaty,Nitrates,120.4623,45,154.8,1
+63,2020-01-28,Tobyl-Torgay,Kostanay,Oil Products,0.0394,0.05,67.4,3
+64,2022-01-18,Nura-Sarysu,Karaganda,Zinc,0.025,0.01,146,3
+65,2020-12-16,Nura-Sarysu,Karaganda,Phenols,0.0028,0.001,155,2
+66,2022-04-24,Aralo-Syrdarya,Kyzylorda,Sulfates,179.7461,500,34,4
+67,2023-10-02,Nura-Sarysu,Karaganda,Nitrates,45.3069,45,78.3,1
+68,2020-04-11,Tobyl-Torgay,Kostanay,Phenols,0.0019,0.001,123,2
+69,2020-03-16,Aralo-Syrdarya,Kyzylorda,Phenols,0.0001,0.001,23,2
+70,2024-01-30,Aralo-Syrdarya,Kyzylorda,Oil Products,0.1455,0.05,161.5,3
+71,2021-10-10,Nura-Sarysu,Karaganda,Oil Products,0.0917,0.05,115.7,3
+72,2022-03-20,Esil,Akmoal,Sulfates,1469.095,500,159.9,4
+73,2020-02-01,Ertis,VKO,Copper,0.0014,0.001,100,2
+74,2023-05-14,Ertis,VKO,Sulfates,59.1779,500,19.9,4
+75,2021-05-27,Balkash-Alakol,Almaty,Copper,0.0011,0.001,73,2
+76,2020-12-01,Tobyl-Torgay,Kostanay,Nitrates,126.2961,45,151.3,1
+77,2020-08-23,Esil,Akmoal,Nitrates,33.3131,45,67,1
+78,2022-04-15,Zhaiyk-Kaspian,Atyrau,Nitrates,88.785,45,112.6,1
+79,2022-03-14,Nura-Sarysu,Karaganda,Sulfates,849.2732,500,104.9,4
+80,2020-03-29,Zhaiyk-Kaspian,Atyrau,Zinc,0.0231,0.01,136.5,3
+81,2021-06-08,Tobyl-Torgay,Kostanay,Phenols,0.0009,0.001,71,2
+82,2022-05-19,Shu-Talas,Zhambyl,Sulfates,95.8042,500,20.6,4
+83,2020-01-12,Tobyl-Torgay,Kostanay,Nitrates,27.7285,45,56.8,1
+84,2022-08-27,Tobyl-Torgay,Kostanay,Nitrates,71.2047,45,100.1,1
+85,2021-09-13,Shu-Talas,Zhambyl,Sulfates,1272.1897,500,150.2,4
+86,2021-10-31,Ertis,VKO,Sulfates,1060.8153,500,125.1,4
+87,2021-01-02,Shu-Talas,Zhambyl,Copper,0.0028,0.001,159,2
+88,2021-01-04,Nura-Sarysu,Karaganda,Nitrates,54.0056,45,70,1
+89,2020-08-22,Nura-Sarysu,Karaganda,Zinc,0.0069,0.01,55.5,3
+90,2022-03-04,Aralo-Syrdarya,Kyzylorda,Phenols,0.0005,0.001,39,2
+91,2020-10-06,Balkash-Alakol,Almaty,Phenols,0.0002,0.001,36,2
+92,2021-08-25,Shu-Talas,Zhambyl,Oil Products,0.1291,0.05,143.1,3
+93,2022-08-17,Nura-Sarysu,Karaganda,Zinc,0.0283,0.01,162.5,3
+94,2020-03-07,Tobyl-Torgay,Kostanay,Nitrates,125.6112,45,169.6,1
+95,2023-05-07,Aralo-Syrdarya,Kyzylorda,Oil Products,0.0885,0.05,102.5,3
+96,2023-09-22,Esil,Akmoal,Oil Products,0.1033,0.05,133.3,3
+97,2021-05-16,Zhaiyk-Kaspian,Atyrau,Oil Products,0.0513,0.05,73.3,3
+98,2023-08-25,Aralo-Syrdarya,Kyzylorda,Sulfates,1134.9321,500,127.5,4
+99,2022-03-04,Shu-Talas,Zhambyl,Oil Products,0.0759,0.05,99.9,3
+100,2021-02-23,Shu-Talas,Zhambyl,Sulfates,517.8811,500,72.8,4
+101,2021-07-15,Balkash-Alakol,Almaty,Sulfates,1137.43,500,123.7,4
+102,2023-11-13,Shu-Talas,Zhambyl,Zinc,0.0021,0.01,32.5,3
+103,2023-10-24,Tobyl-Torgay,Kostanay,Phenols,0.0005,0.001,36,2
+104,2023-09-02,Balkash-Alakol,Almaty,Nitrates,106.6942,45,148.5,1
+105,2022-02-25,Balkash-Alakol,Almaty,Copper,0.0028,0.001,165,2
+106,2020-12-21,Balkash-Alakol,Almaty,Phenols,0.0005,0.001,46,2
+107,2022-11-22,Zhaiyk-Kaspian,Atyrau,Sulfates,1397.3264,500,154.7,4
+108,2023-09-20,Aralo-Syrdarya,Kyzylorda,Nitrates,20.8381,45,34.2,1
+109,2021-04-08,Zhaiyk-Kaspian,Atyrau,Phenols,0.0007,0.001,59,2
+110,2022-01-03,Shu-Talas,Zhambyl,Phenols,0.0029,0.001,161,2
+111,2022-07-26,Ertis,VKO,Sulfates,850.8817,500,102.1,4
+112,2020-12-12,Ertis,VKO,Sulfates,941.439,500,117.1,4
+113,2024-01-22,Zhaiyk-Kaspian,Atyrau,Nitrates,21.7533,45,44.2,1
+114,2024-01-01,Ertis,VKO,Sulfates,596.0853,500,71.6,4
+115,2022-05-15,Shu-Talas,Zhambyl,Zinc,0.0237,0.01,141.5,3
+116,2023-12-21,Shu-Talas,Zhambyl,Phenols,0.002,0.001,129,2
+117,2023-04-27,Nura-Sarysu,Karaganda,Copper,0.002,0.001,116,2
+118,2021-08-12,Ertis,VKO,Phenols,0.0023,0.001,135,2
+119,2023-03-27,Tobyl-Torgay,Kostanay,Oil Products,0.0356,0.05,49.6,3
+120,2020-04-10,Aralo-Syrdarya,Kyzylorda,Copper,0.0024,0.001,130,2
+121,2023-10-29,Esil,Akmoal,Copper,0.0025,0.001,143,2
+122,2020-02-04,Tobyl-Torgay,Kostanay,Copper,0.0003,0.001,30,2
+123,2021-01-06,Zhaiyk-Kaspian,Atyrau,Nitrates,118.9099,45,142.1,1
+124,2022-12-10,Nura-Sarysu,Karaganda,Zinc,0.017,0.01,99,3
+125,2021-08-07,Nura-Sarysu,Karaganda,Nitrates,20.7971,45,51.1,1
+126,2023-07-29,Tobyl-Torgay,Kostanay,Sulfates,154.4354,500,32.4,4
+127,2021-03-25,Balkash-Alakol,Almaty,Sulfates,450.8754,500,63.1,4
+128,2023-03-12,Nura-Sarysu,Karaganda,Oil Products,0.0574,0.05,86.4,3
+129,2021-11-07,Ertis,VKO,Oil Products,0.1191,0.05,139.1,3
+130,2022-04-04,Shu-Talas,Zhambyl,Phenols,0.002,0.001,111,2
+131,2021-03-08,Aralo-Syrdarya,Kyzylorda,Sulfates,518.4106,500,81.8,4
+132,2024-01-15,Aralo-Syrdarya,Kyzylorda,Oil Products,0.0083,0.05,29.3,3
+133,2020-10-14,Tobyl-Torgay,Kostanay,Sulfates,332.7617,500,43.3,4
+134,2021-07-20,Zhaiyk-Kaspian,Atyrau,Sulfates,114.6092,500,34.5,4
+135,2022-12-20,Esil,Akmoal,Sulfates,1004.5829,500,112.5,4
+136,2020-09-27,Balkash-Alakol,Almaty,Copper,0.0016,0.001,102,2
+137,2021-09-26,Esil,Akmoal,Oil Products,0.0353,0.05,54.3,3
+138,2020-01-25,Nura-Sarysu,Karaganda,Phenols,0.0006,0.001,46,2
+139,2022-01-24,Esil,Akmoal,Sulfates,80.2493,500,21,4
+140,2022-12-18,Balkash-Alakol,Almaty,Phenols,0.0021,0.001,134,2
+141,2020-07-25,Balkash-Alakol,Almaty,Zinc,0.0191,0.01,110.5,3
+142,2023-01-28,Zhaiyk-Kaspian,Atyrau,Sulfates,1088.6976,500,132.9,4
+143,2021-05-09,Shu-Talas,Zhambyl,Copper,0.0027,0.001,157,2
+144,2021-08-12,Balkash-Alakol,Almaty,Copper,0.0025,0.001,151,2
+145,2021-09-19,Tobyl-Torgay,Kostanay,Zinc,0.0224,0.01,131,3
+146,2021-09-16,Esil,Akmoal,Nitrates,121.3036,45,156.8,1
+147,2022-06-28,Nura-Sarysu,Karaganda,Nitrates,12.0196,45,37.4,1
+148,2021-04-23,Balkash-Alakol,Almaty,Sulfates,412.1617,500,67.2,4
+149,2020-06-26,Shu-Talas,Zhambyl,Copper,0.0022,0.001,121,2
+150,2020-09-23,Esil,Akmoal,Phenols,0.0011,0.001,73,2
+151,2023-01-12,Esil,Akmoal,Sulfates,602.803,500,79.3,4
+152,2021-03-15,Tobyl-Torgay,Kostanay,Phenols,0.0007,0.001,64,2
+153,2020-10-01,Nura-Sarysu,Karaganda,Copper,0.0012,0.001,71,2
+154,2022-02-21,Tobyl-Torgay,Kostanay,Nitrates,37.7272,45,64.9,1
+155,2023-04-23,Ertis,VKO,Nitrates,54.9115,45,78,1
+156,2021-11-04,Nura-Sarysu,Karaganda,Sulfates,60.4695,500,28,4
+157,2022-10-12,Ertis,VKO,Copper,0.0004,0.001,36,2
+158,2022-05-26,Esil,Akmoal,Nitrates,112.3976,45,149.9,1
+159,2021-12-09,Esil,Akmoal,Oil Products,0.0316,0.05,59.6,3
+160,2022-02-24,Aralo-Syrdarya,Kyzylorda,Sulfates,144.6149,500,29.5,4
+161,2020-02-22,Esil,Akmoal,Nitrates,83.2174,45,103.5,1
+162,2020-12-25,Zhaiyk-Kaspian,Atyrau,Phenols,0.0016,0.001,104,2
+163,2022-10-04,Nura-Sarysu,Karaganda,Zinc,0.0161,0.01,105.5,3
+164,2020-10-15,Aralo-Syrdarya,Kyzylorda,Zinc,0.0212,0.01,134,3
+165,2020-03-05,Ertis,VKO,Oil Products,0.119,0.05,144,3
+166,2022-05-25,Shu-Talas,Zhambyl,Zinc,0.0177,0.01,109.5,3
+167,2024-01-26,Tobyl-Torgay,Kostanay,Phenols,0.0029,0.001,155,2
+168,2021-11-25,Esil,Akmoal,Nitrates,28.4917,45,49.7,1
+169,2020-08-21,Zhaiyk-Kaspian,Atyrau,Phenols,0.0023,0.001,131,2
+170,2022-08-05,Nura-Sarysu,Karaganda,Phenols,0.0017,0.001,113,2
+171,2020-09-25,Esil,Akmoal,Nitrates,50.31,45,66.9,1
+172,2020-01-23,Aralo-Syrdarya,Kyzylorda,Oil Products,0.1073,0.05,123.3,3
+173,2021-11-07,Ertis,VKO,Sulfates,1432.494,500,162.2,4
+174,2022-04-04,Tobyl-Torgay,Kostanay,Oil Products,0.1036,0.05,132.6,3
+175,2023-09-21,Aralo-Syrdarya,Kyzylorda,Nitrates,103.1845,45,130.6,1
+176,2020-07-24,Balkash-Alakol,Almaty,Nitrates,100.8374,45,142,1
+177,2020-11-09,Zhaiyk-Kaspian,Atyrau,Sulfates,894.3069,500,113.4,4
+178,2021-04-22,Zhaiyk-Kaspian,Atyrau,Nitrates,21.9111,45,53.3,1
+179,2023-07-25,Ertis,VKO,Zinc,0.0247,0.01,136.5,3
+180,2023-10-22,Nura-Sarysu,Karaganda,Sulfates,184.4024,500,37.4,4
+181,2020-10-17,Aralo-Syrdarya,Kyzylorda,Nitrates,54.1243,45,87.1,1
+182,2023-06-18,Aralo-Syrdarya,Kyzylorda,Phenols,0.0006,0.001,48,2
+183,2021-04-27,Tobyl-Torgay,Kostanay,Nitrates,45.7169,45,71.8,1
+184,2023-03-18,Tobyl-Torgay,Kostanay,Zinc,0.0143,0.01,91.5,3
+185,2023-03-14,Shu-Talas,Zhambyl,Nitrates,61.1831,45,88,1
+186,2023-01-04,Shu-Talas,Zhambyl,Phenols,0.002,0.001,114,2
+187,2021-10-22,Shu-Talas,Zhambyl,Sulfates,1190.0906,500,148,4
+188,2021-05-16,Shu-Talas,Zhambyl,Zinc,0.0209,0.01,115.5,3
+189,2022-12-12,Balkash-Alakol,Almaty,Nitrates,68.4834,45,104.1,1
+190,2023-09-08,Balkash-Alakol,Almaty,Copper,0.0014,0.001,84,2
+191,2023-12-23,Aralo-Syrdarya,Kyzylorda,Zinc,0.0134,0.01,92,3
+192,2021-01-23,Esil,Akmoal,Sulfates,1035.1638,500,115.5,4
+193,2022-04-18,Aralo-Syrdarya,Kyzylorda,Phenols,0.0019,0.001,112,2
+194,2020-11-03,Aralo-Syrdarya,Kyzylorda,Phenols,0.0024,0.001,137,2
+195,2023-06-16,Tobyl-Torgay,Kostanay,Zinc,0.0163,0.01,94.5,3
+196,2020-01-31,Zhaiyk-Kaspian,Atyrau,Oil Products,0.0167,0.05,33.7,3
+197,2021-10-08,Nura-Sarysu,Karaganda,Sulfates,850.9945,500,114.1,4
+198,2021-10-23,Esil,Akmoal,Nitrates,14.918,45,41.6,1
+199,2020-11-11,Aralo-Syrdarya,Kyzylorda,Nitrates,23.6857,45,56.3,1
+200,2020-03-23,Ertis,VKO,Copper,0.0021,0.001,135,2
+201,2020-11-26,Aralo-Syrdarya,Kyzylorda,Zinc,0.0192,0.01,113,3
+202,2023-08-26,Aralo-Syrdarya,Kyzylorda,Nitrates,78.634,45,107.4,1
+203,2021-09-16,Zhaiyk-Kaspian,Atyrau,Phenols,0.0003,0.001,40,2
+204,2021-04-17,Nura-Sarysu,Karaganda,Nitrates,84.2952,45,107.7,1
+205,2022-02-15,Zhaiyk-Kaspian,Atyrau,Zinc,0.0095,0.01,71.5,3
+206,2023-07-25,Nura-Sarysu,Karaganda,Phenols,0.0002,0.001,39,2
+207,2020-05-22,Tobyl-Torgay,Kostanay,Sulfates,613.3165,500,72.3,4
+208,2021-07-06,Ertis,VKO,Zinc,0.0252,0.01,149,3
+209,2021-06-08,Balkash-Alakol,Almaty,Zinc,0.0287,0.01,162.5,3
+210,2023-10-29,Zhaiyk-Kaspian,Atyrau,Oil Products,0.0217,0.05,33.7,3
+211,2023-05-06,Nura-Sarysu,Karaganda,Sulfates,368.017,500,63.8,4
+212,2020-06-11,Balkash-Alakol,Almaty,Oil Products,0.1402,0.05,164.2,3
+213,2021-02-19,Nura-Sarysu,Karaganda,Oil Products,0.0424,0.05,63.4,3
+214,2020-02-21,Balkash-Alakol,Almaty,Phenols,0.0015,0.001,88,2
+215,2022-07-08,Esil,Akmoal,Zinc,0.0119,0.01,76.5,3
+216,2020-11-06,Tobyl-Torgay,Kostanay,Zinc,0.0018,0.01,24,3
+217,2023-05-01,Balkash-Alakol,Almaty,Nitrates,99.6823,45,136.8,1
+218,2021-07-09,Shu-Talas,Zhambyl,Sulfates,620.4958,500,87,4
+219,2022-04-20,Esil,Akmoal,Phenols,0.0015,0.001,101,2
+220,2020-11-22,Shu-Talas,Zhambyl,Zinc,0.0043,0.01,39.5,3
+221,2021-06-04,Ertis,VKO,Phenols,0.0026,0.001,151,2
+222,2023-02-21,Zhaiyk-Kaspian,Atyrau,Sulfates,997.368,500,114.7,4
+223,2021-06-22,Shu-Talas,Zhambyl,Oil Products,0.0812,0.05,104.2,3
+224,2022-12-22,Ertis,VKO,Nitrates,90.0724,45,116.1,1
+225,2022-07-10,Ertis,VKO,Nitrates,64.3326,45,96.5,1
+226,2023-10-21,Tobyl-Torgay,Kostanay,Sulfates,158.651,500,36.9,4
+227,2020-04-16,Balkash-Alakol,Almaty,Oil Products,0.0636,0.05,85.6,3
+228,2024-01-12,Aralo-Syrdarya,Kyzylorda,Copper,0.0023,0.001,135,2
+229,2023-10-04,Aralo-Syrdarya,Kyzylorda,Phenols,0.0014,0.001,83,2
+230,2021-09-15,Shu-Talas,Zhambyl,Nitrates,10.0135,45,32.1,1
+231,2021-08-25,Ertis,VKO,Copper,0.0012,0.001,84,2
+232,2022-04-12,Balkash-Alakol,Almaty,Oil Products,0.0679,0.05,92.9,3
+233,2021-02-12,Shu-Talas,Zhambyl,Oil Products,0.0287,0.05,48.7,3
+234,2022-12-25,Shu-Talas,Zhambyl,Zinc,0.0243,0.01,139.5,3
+235,2021-09-14,Nura-Sarysu,Karaganda,Nitrates,116.0076,45,156.9,1
+236,2021-01-04,Tobyl-Torgay,Kostanay,Zinc,0.0047,0.01,42.5,3
+237,2021-02-25,Esil,Akmoal,Phenols,0.0029,0.001,168,2
+238,2021-10-27,Aralo-Syrdarya,Kyzylorda,Oil Products,0.0563,0.05,70.3,3
+239,2020-12-03,Nura-Sarysu,Karaganda,Nitrates,113.3352,45,145.9,1
+240,2020-09-27,Nura-Sarysu,Karaganda,Phenols,0.0022,0.001,133,2
+241,2022-08-28,Nura-Sarysu,Karaganda,Copper,0.0013,0.001,83,2
+242,2021-06-05,Esil,Akmoal,Phenols,0.0015,0.001,98,2
+243,2021-02-07,Shu-Talas,Zhambyl,Copper,0.0018,0.001,109,2
+244,2022-04-13,Ertis,VKO,Copper,0.0016,0.001,97,2
+245,2020-02-23,Ertis,VKO,Zinc,0.0079,0.01,57.5,3
+246,2021-07-25,Ertis,VKO,Oil Products,0.0971,0.05,122.1,3
+247,2021-09-10,Zhaiyk-Kaspian,Atyrau,Copper,0.0025,0.001,139,2
+248,2022-12-13,Ertis,VKO,Copper,0.0001,0.001,25,2
+249,2020-10-08,Balkash-Alakol,Almaty,Copper,0.0021,0.001,122,2
+250,2022-05-21,Aralo-Syrdarya,Kyzylorda,Sulfates,1443.9944,500,169.4,4
+251,2023-12-04,Shu-Talas,Zhambyl,Nitrates,47.7066,45,71,1
+252,2021-08-29,Ertis,VKO,Phenols,0.001,0.001,63,2
+253,2024-01-19,Tobyl-Torgay,Kostanay,Phenols,0.0009,0.001,60,2
+254,2021-12-06,Zhaiyk-Kaspian,Atyrau,Zinc,0.0211,0.01,126.5,3
+255,2023-10-19,Nura-Sarysu,Karaganda,Zinc,0.0025,0.01,22.5,3
+256,2021-08-08,Nura-Sarysu,Karaganda,Nitrates,24.4763,45,52.2,1
+257,2020-10-13,Ertis,VKO,Nitrates,67.0139,45,102.5,1
+258,2021-06-18,Ertis,VKO,Zinc,0.0129,0.01,87.5,3
+259,2022-09-09,Tobyl-Torgay,Kostanay,Oil Products,0.0719,0.05,101.9,3
+260,2022-02-10,Balkash-Alakol,Almaty,Copper,0.0011,0.001,82,2
+261,2022-03-17,Ertis,VKO,Oil Products,0.1229,0.05,144.9,3
+262,2023-06-24,Ertis,VKO,Copper,0.0026,0.001,148,2
+263,2023-03-06,Esil,Akmoal,Sulfates,127.513,500,32.8,4
+264,2021-06-20,Tobyl-Torgay,Kostanay,Oil Products,0.0142,0.05,27.2,3
+265,2020-09-21,Aralo-Syrdarya,Kyzylorda,Phenols,0.0011,0.001,75,2
+266,2020-04-03,Shu-Talas,Zhambyl,Oil Products,0.0683,0.05,90.3,3
+267,2021-02-07,Aralo-Syrdarya,Kyzylorda,Phenols,0.001,0.001,73,2
+268,2021-03-24,Esil,Akmoal,Zinc,0.0218,0.01,121,3
+269,2023-04-14,Ertis,VKO,Zinc,0.007,0.01,60,3
+270,2024-02-07,Shu-Talas,Zhambyl,Nitrates,77.6199,45,111.2,1
+271,2020-03-01,Tobyl-Torgay,Kostanay,Nitrates,102.6627,45,137.1,1
+272,2021-10-08,Nura-Sarysu,Karaganda,Zinc,0.0177,0.01,117.5,3
+273,2022-04-17,Ertis,VKO,Phenols,0.0015,0.001,89,2
+274,2021-06-11,Esil,Akmoal,Zinc,0.0257,0.01,146.5,3
+275,2022-02-26,Shu-Talas,Zhambyl,Zinc,0.0163,0.01,102.5,3
+276,2020-09-04,Tobyl-Torgay,Kostanay,Zinc,0.0021,0.01,37.5,3
+277,2022-01-12,Balkash-Alakol,Almaty,Oil Products,0.1078,0.05,127.8,3
+278,2020-01-17,Aralo-Syrdarya,Kyzylorda,Zinc,0.0187,0.01,122.5,3
+279,2021-11-09,Ertis,VKO,Copper,0.0005,0.001,43,2
+280,2021-03-16,Aralo-Syrdarya,Kyzylorda,Zinc,0.0023,0.01,22.5,3
+281,2021-04-22,Shu-Talas,Zhambyl,Phenols,0.0009,0.001,72,2
+282,2023-08-17,Shu-Talas,Zhambyl,Oil Products,0.0279,0.05,56.9,3
+283,2021-04-03,Esil,Akmoal,Oil Products,0.0278,0.05,39.8,3
+284,2021-12-05,Nura-Sarysu,Karaganda,Copper,0.0027,0.001,165,2
+285,2021-11-17,Ertis,VKO,Nitrates,20.3888,45,32.7,1
+286,2023-08-08,Balkash-Alakol,Almaty,Oil Products,0.0135,0.05,36.5,3
+287,2023-09-14,Ertis,VKO,Copper,0.0013,0.001,88,2
+288,2023-07-06,Ertis,VKO,Nitrates,16.651,45,42.5,1
+289,2022-11-07,Tobyl-Torgay,Kostanay,Oil Products,0.0385,0.05,56.5,3
+290,2020-10-04,Zhaiyk-Kaspian,Atyrau,Copper,0.002,0.001,116,2
+291,2023-11-17,Shu-Talas,Zhambyl,Phenols,0.0011,0.001,83,2
+292,2020-04-29,Ertis,VKO,Phenols,0.0004,0.001,35,2
+293,2024-01-11,Esil,Akmoal,Sulfates,1448.3488,500,161.8,4
+294,2023-12-19,Zhaiyk-Kaspian,Atyrau,Sulfates,785.0244,500,97.5,4
+295,2023-09-25,Zhaiyk-Kaspian,Atyrau,Copper,0.0028,0.001,164,2
+296,2020-10-20,Shu-Talas,Zhambyl,Zinc,0.0262,0.01,147,3
+297,2023-05-14,Ertis,VKO,Zinc,0.0042,0.01,44,3
+298,2022-07-13,Ertis,VKO,Copper,0.0008,0.001,57,2
+299,2020-08-19,Balkash-Alakol,Almaty,Nitrates,114.0891,45,138.8,1
+300,2021-09-23,Tobyl-Torgay,Kostanay,Sulfates,1148.9781,500,129.9,4
+301,2022-08-06,Tobyl-Torgay,Kostanay,Copper,0.0002,0.001,21,2
+302,2020-04-25,Nura-Sarysu,Karaganda,Phenols,0.0006,0.001,51,2
+303,2020-02-11,Zhaiyk-Kaspian,Atyrau,Copper,0.0005,0.001,55,2
+304,2021-12-31,Aralo-Syrdarya,Kyzylorda,Copper,0.0017,0.001,109,2
+305,2021-07-31,Balkash-Alakol,Almaty,Phenols,0.0003,0.001,36,2
+306,2020-01-10,Balkash-Alakol,Almaty,Sulfates,1110.2093,500,130,4
+307,2023-03-02,Ertis,VKO,Sulfates,987.9007,500,112.8,4
+308,2023-04-03,Tobyl-Torgay,Kostanay,Nitrates,51.7384,45,84.5,1
+309,2022-05-10,Ertis,VKO,Nitrates,93.5135,45,114.9,1
+310,2022-09-13,Aralo-Syrdarya,Kyzylorda,Copper,0.0026,0.001,144,2
+311,2020-11-03,Ertis,VKO,Sulfates,1347.3446,500,161.7,4
+312,2021-08-09,Zhaiyk-Kaspian,Atyrau,Oil Products,0.1041,0.05,124.1,3
+313,2023-10-03,Balkash-Alakol,Almaty,Copper,0.0022,0.001,130,2
+314,2023-09-28,Aralo-Syrdarya,Kyzylorda,Copper,0.0013,0.001,81,2
+315,2021-06-12,Esil,Akmoal,Nitrates,130.5654,45,168.1,1
+316,2023-04-23,Shu-Talas,Zhambyl,Oil Products,0.0533,0.05,77.3,3
+317,2021-05-12,Nura-Sarysu,Karaganda,Oil Products,0.0537,0.05,77.7,3
+318,2021-09-28,Zhaiyk-Kaspian,Atyrau,Oil Products,0.0787,0.05,101.7,3
+319,2020-01-20,Esil,Akmoal,Nitrates,87.3893,45,127.1,1
+320,2021-08-17,Aralo-Syrdarya,Kyzylorda,Phenols,0.0006,0.001,51,2
+321,2020-11-23,Balkash-Alakol,Almaty,Nitrates,96.9891,45,119.8,1
+322,2022-07-17,Nura-Sarysu,Karaganda,Sulfates,313.0395,500,47.3,4
+323,2020-06-11,Ertis,VKO,Oil Products,0.0982,0.05,120.2,3
+324,2023-04-01,Tobyl-Torgay,Kostanay,Nitrates,79.6902,45,100.5,1
+325,2023-05-22,Esil,Akmoal,Copper,0.0015,0.001,98,2
+326,2021-04-14,Nura-Sarysu,Karaganda,Zinc,0.0298,0.01,172,3
+327,2023-02-26,Ertis,VKO,Copper,0.0019,0.001,114,2
+328,2020-08-17,Nura-Sarysu,Karaganda,Zinc,0.0028,0.01,24,3
+329,2021-05-03,Esil,Akmoal,Oil Products,0.1178,0.05,137.8,3
+330,2023-02-03,Balkash-Alakol,Almaty,Sulfates,236.8201,500,50.7,4
+331,2021-10-28,Aralo-Syrdarya,Kyzylorda,Sulfates,486.476,500,77.6,4
+332,2024-01-15,Nura-Sarysu,Karaganda,Oil Products,0.1135,0.05,136.5,3
+333,2023-01-01,Esil,Akmoal,Nitrates,9.2759,45,24.3,1
+334,2023-03-13,Balkash-Alakol,Almaty,Nitrates,14.066,45,27.6,1
+335,2021-12-11,Aralo-Syrdarya,Kyzylorda,Phenols,0.0029,0.001,160,2
+336,2024-01-27,Zhaiyk-Kaspian,Atyrau,Sulfates,608.767,500,82.9,4
+337,2022-07-19,Zhaiyk-Kaspian,Atyrau,Phenols,0.0004,0.001,37,2
+338,2022-06-14,Balkash-Alakol,Almaty,Sulfates,138.9629,500,42.9,4
+339,2022-10-22,Esil,Akmoal,Phenols,0.0014,0.001,92,2
+340,2021-07-04,Ertis,VKO,Sulfates,846.3075,500,96.6,4
+341,2021-09-13,Ertis,VKO,Copper,0.0014,0.001,97,2
+342,2020-06-01,Balkash-Alakol,Almaty,Zinc,0.0272,0.01,161,3
+343,2022-05-03,Zhaiyk-Kaspian,Atyrau,Zinc,0.022,0.01,124,3
+344,2021-08-16,Aralo-Syrdarya,Kyzylorda,Zinc,0.0296,0.01,173,3
+345,2021-05-28,Esil,Akmoal,Zinc,0.0158,0.01,107,3
+346,2022-05-01,Shu-Talas,Zhambyl,Copper,0.0017,0.001,109,2
+347,2021-02-13,Aralo-Syrdarya,Kyzylorda,Zinc,0.0165,0.01,92.5,3
+348,2020-02-04,Aralo-Syrdarya,Kyzylorda,Nitrates,125.4338,45,150.4,1
+349,2023-05-21,Shu-Talas,Zhambyl,Oil Products,0.0522,0.05,62.2,3
+350,2020-01-22,Aralo-Syrdarya,Kyzylorda,Nitrates,25.0998,45,56.9,1
+351,2023-06-12,Tobyl-Torgay,Kostanay,Nitrates,132.6905,45,159.4,1
+352,2021-10-25,Tobyl-Torgay,Kostanay,Copper,0.002,0.001,118,2
+353,2023-12-03,Balkash-Alakol,Almaty,Sulfates,440.005,500,60,4
+354,2023-09-06,Nura-Sarysu,Karaganda,Copper,0.0018,0.001,103,2
+355,2022-02-21,Shu-Talas,Zhambyl,Zinc,0.0108,0.01,82,3
+356,2020-04-12,Esil,Akmoal,Oil Products,0.1492,0.05,170.2,3
+357,2021-01-20,Nura-Sarysu,Karaganda,Sulfates,592.7777,500,82.3,4
+358,2022-03-16,Balkash-Alakol,Almaty,Phenols,0.0028,0.001,152,2
+359,2020-06-20,Nura-Sarysu,Karaganda,Sulfates,475.0969,500,73.5,4
+360,2020-09-07,Shu-Talas,Zhambyl,Sulfates,1407.5304,500,152.8,4
+361,2022-05-13,Balkash-Alakol,Almaty,Sulfates,729.9105,500,103,4
+362,2022-11-08,Zhaiyk-Kaspian,Atyrau,Copper,0.0005,0.001,53,2
+363,2021-05-07,Zhaiyk-Kaspian,Atyrau,Oil Products,0.0431,0.05,67.1,3
+364,2022-10-12,Aralo-Syrdarya,Kyzylorda,Sulfates,1191.332,500,140.1,4
+365,2023-03-26,Nura-Sarysu,Karaganda,Phenols,0.0002,0.001,25,2
+366,2021-05-02,Ertis,VKO,Oil Products,0.0149,0.05,34.9,3
+367,2021-10-29,Balkash-Alakol,Almaty,Nitrates,23.5498,45,38.2,1
+368,2022-08-01,Esil,Akmoal,Copper,0.0002,0.001,34,2
+369,2020-04-30,Balkash-Alakol,Almaty,Sulfates,1389.956,500,169,4
+370,2021-03-18,Zhaiyk-Kaspian,Atyrau,Copper,0.0018,0.001,100,2
+371,2022-03-08,Balkash-Alakol,Almaty,Nitrates,128.0522,45,158.3,1
+372,2023-12-01,Tobyl-Torgay,Kostanay,Sulfates,1460.7638,500,157.1,4
+373,2021-04-06,Shu-Talas,Zhambyl,Phenols,0.0018,0.001,119,2
+374,2020-04-03,Balkash-Alakol,Almaty,Phenols,0.0012,0.001,87,2
+375,2023-04-18,Esil,Akmoal,Zinc,0.0143,0.01,88.5,3
+376,2023-04-25,Aralo-Syrdarya,Kyzylorda,Oil Products,0.082,0.05,106,3
+377,2020-11-23,Tobyl-Torgay,Kostanay,Zinc,0.0179,0.01,113.5,3
+378,2024-02-03,Ertis,VKO,Sulfates,451.4788,500,68.1,4
+379,2020-01-31,Tobyl-Torgay,Kostanay,Copper,0.0004,0.001,45,2
+380,2020-10-20,Shu-Talas,Zhambyl,Oil Products,0.1491,0.05,172.1,3
+381,2022-01-26,Esil,Akmoal,Oil Products,0.1066,0.05,126.6,3
+382,2022-07-24,Zhaiyk-Kaspian,Atyrau,Oil Products,0.1364,0.05,147.4,3
+383,2021-04-01,Shu-Talas,Zhambyl,Zinc,0.0175,0.01,117.5,3
+384,2020-10-11,Esil,Akmoal,Oil Products,0.1145,0.05,131.5,3
+385,2021-12-05,Shu-Talas,Zhambyl,Oil Products,0.1308,0.05,158.8,3
+386,2021-01-23,Zhaiyk-Kaspian,Atyrau,Sulfates,1450.6162,500,158.1,4
+387,2021-08-29,Esil,Akmoal,Copper,0.0014,0.001,90,2
+388,2021-04-18,Shu-Talas,Zhambyl,Copper,0.001,0.001,71,2
+389,2022-03-20,Ertis,VKO,Sulfates,273.1959,500,56.3,4
+390,2023-12-11,Shu-Talas,Zhambyl,Sulfates,1210.8696,500,138.1,4
+391,2022-07-17,Zhaiyk-Kaspian,Atyrau,Zinc,0.0143,0.01,101.5,3
+392,2022-06-04,Tobyl-Torgay,Kostanay,Nitrates,14.0987,45,43.7,1
+393,2023-08-09,Zhaiyk-Kaspian,Atyrau,Nitrates,126.4783,45,152.5,1
+394,2023-08-07,Tobyl-Torgay,Kostanay,Zinc,0.0279,0.01,152.5,3
+395,2022-08-07,Zhaiyk-Kaspian,Atyrau,Oil Products,0.1419,0.05,152.9,3
+396,2020-02-18,Tobyl-Torgay,Kostanay,Zinc,0.0115,0.01,73.5,3
+397,2021-04-04,Esil,Akmoal,Phenols,0.002,0.001,127,2
+398,2023-03-17,Ertis,VKO,Oil Products,0.0242,0.05,43.2,3
+399,2023-01-08,Shu-Talas,Zhambyl,Sulfates,306.5154,500,50.7,4
+400,2023-03-20,Aralo-Syrdarya,Kyzylorda,Nitrates,79.8905,45,102.8,1
+401,2023-04-05,Balkash-Alakol,Almaty,Zinc,0.0278,0.01,151,3
+402,2022-03-07,Nura-Sarysu,Karaganda,Sulfates,1435.2078,500,164.5,4
+403,2020-02-09,Zhaiyk-Kaspian,Atyrau,Phenols,0.0007,0.001,50,2
+404,2022-08-07,Zhaiyk-Kaspian,Atyrau,Copper,0.0021,0.001,117,2
+405,2020-03-01,Shu-Talas,Zhambyl,Copper,0.0024,0.001,139,2
+406,2020-09-20,Tobyl-Torgay,Kostanay,Zinc,0.0261,0.01,148.5,3
+407,2020-03-26,Esil,Akmoal,Sulfates,785.8571,500,94.6,4
+408,2021-03-12,Balkash-Alakol,Almaty,Oil Products,0.1271,0.05,150.1,3
+409,2020-11-02,Esil,Akmoal,Oil Products,0.1071,0.05,117.1,3
+410,2021-10-15,Nura-Sarysu,Karaganda,Nitrates,9.6199,45,33.7,1
+411,2023-01-20,Nura-Sarysu,Karaganda,Nitrates,133.5712,45,163.4,1
+412,2021-01-13,Aralo-Syrdarya,Kyzylorda,Copper,0.0025,0.001,150,2
+413,2021-10-20,Nura-Sarysu,Karaganda,Nitrates,72.4917,45,98.5,1
+414,2022-12-24,Zhaiyk-Kaspian,Atyrau,Sulfates,414.3529,500,62.4,4
+415,2020-02-19,Nura-Sarysu,Karaganda,Phenols,0.0026,0.001,152,2
+416,2023-07-17,Ertis,VKO,Oil Products,0.0646,0.05,86.6,3
+417,2022-09-07,Tobyl-Torgay,Kostanay,Copper,0.0006,0.001,42,2
+418,2023-01-25,Balkash-Alakol,Almaty,Zinc,0.0224,0.01,139,3
+419,2020-03-30,Ertis,VKO,Zinc,0.0226,0.01,131,3
+420,2023-10-01,Zhaiyk-Kaspian,Atyrau,Copper,0.0005,0.001,50,2
+421,2021-07-21,Ertis,VKO,Nitrates,84.2394,45,120.6,1
+422,2021-05-09,Zhaiyk-Kaspian,Atyrau,Phenols,0.0026,0.001,153,2
+423,2020-09-19,Nura-Sarysu,Karaganda,Copper,0.0011,0.001,81,2
+424,2021-04-07,Balkash-Alakol,Almaty,Phenols,0.0029,0.001,171,2
+425,2020-01-02,Ertis,VKO,Phenols,0.0001,0.001,27,2
+426,2023-12-11,Nura-Sarysu,Karaganda,Sulfates,972.5644,500,117.3,4
+427,2020-05-03,Zhaiyk-Kaspian,Atyrau,Zinc,0.0129,0.01,91.5,3
+428,2023-01-27,Aralo-Syrdarya,Kyzylorda,Nitrates,78.1516,45,102.8,1
+429,2022-04-17,Esil,Akmoal,Copper,0.0002,0.001,21,2
+430,2020-06-01,Aralo-Syrdarya,Kyzylorda,Zinc,0.0218,0.01,121,3
+431,2020-05-13,Nura-Sarysu,Karaganda,Phenols,0.0005,0.001,51,2
+432,2023-05-12,Tobyl-Torgay,Kostanay,Sulfates,1277.3875,500,148.7,4
+433,2021-05-18,Aralo-Syrdarya,Kyzylorda,Copper,0.0015,0.001,102,2
+434,2022-03-06,Ertis,VKO,Phenols,0.0004,0.001,35,2
+435,2022-03-03,Balkash-Alakol,Almaty,Sulfates,413.8923,500,63.4,4
+436,2021-10-21,Nura-Sarysu,Karaganda,Sulfates,495.1838,500,75.5,4
+437,2021-06-25,Shu-Talas,Zhambyl,Nitrates,8.8056,45,35.8,1
+438,2021-05-13,Nura-Sarysu,Karaganda,Zinc,0.0124,0.01,84,3
+439,2021-01-10,Balkash-Alakol,Almaty,Zinc,0.0104,0.01,70,3
+440,2020-09-21,Balkash-Alakol,Almaty,Copper,0.0004,0.001,40,2
+441,2024-02-03,Balkash-Alakol,Almaty,Oil Products,0.0281,0.05,41.1,3
+442,2022-10-04,Esil,Akmoal,Nitrates,82.5472,45,115.7,1
+443,2020-03-25,Shu-Talas,Zhambyl,Phenols,0.0012,0.001,76,2
+444,2021-05-17,Shu-Talas,Zhambyl,Copper,0.0029,0.001,171,2
+445,2023-02-11,Tobyl-Torgay,Kostanay,Sulfates,177.4088,500,40.7,4
+446,2022-09-17,Shu-Talas,Zhambyl,Sulfates,910.3339,500,110,4
+447,2023-03-17,Aralo-Syrdarya,Kyzylorda,Nitrates,78.9703,45,114.7,1
+448,2021-07-31,Nura-Sarysu,Karaganda,Nitrates,67.5028,45,100,1
+449,2023-12-10,Esil,Akmoal,Zinc,0.011,0.01,79,3
+450,2023-01-30,Aralo-Syrdarya,Kyzylorda,Nitrates,17.0901,45,37,1
+451,2021-02-08,Esil,Akmoal,Oil Products,0.1053,0.05,117.3,3
+452,2021-10-18,Balkash-Alakol,Almaty,Nitrates,111.4561,45,153.8,1
+453,2024-01-18,Nura-Sarysu,Karaganda,Oil Products,0.0282,0.05,40.2,3
+454,2021-03-22,Shu-Talas,Zhambyl,Phenols,0.0003,0.001,32,2
+455,2022-01-22,Zhaiyk-Kaspian,Atyrau,Copper,0.0023,0.001,140,2
+456,2020-09-26,Nura-Sarysu,Karaganda,Copper,0.0015,0.001,86,2
+457,2023-08-29,Shu-Talas,Zhambyl,Copper,0.0003,0.001,30,2
+458,2020-09-16,Aralo-Syrdarya,Kyzylorda,Sulfates,1191.7055,500,143.2,4
+459,2022-02-09,Nura-Sarysu,Karaganda,Zinc,0.0107,0.01,81.5,3
+460,2021-06-29,Shu-Talas,Zhambyl,Phenols,0.0017,0.001,112,2
+461,2021-06-26,Tobyl-Torgay,Kostanay,Sulfates,926.4307,500,105.6,4
+462,2022-11-08,Balkash-Alakol,Almaty,Zinc,0.0245,0.01,146.5,3
+463,2020-09-06,Aralo-Syrdarya,Kyzylorda,Sulfates,1441.872,500,173.2,4
+464,2022-04-28,Tobyl-Torgay,Kostanay,Copper,0.0028,0.001,160,2
+465,2022-07-04,Nura-Sarysu,Karaganda,Copper,0.0028,0.001,168,2
+466,2023-04-29,Esil,Akmoal,Phenols,0.0015,0.001,102,2
+467,2021-05-02,Tobyl-Torgay,Kostanay,Phenols,0.0011,0.001,80,2
+468,2020-02-26,Nura-Sarysu,Karaganda,Zinc,0.0153,0.01,98.5,3
+469,2021-08-05,Nura-Sarysu,Karaganda,Oil Products,0.0493,0.05,63.3,3
+470,2021-05-26,Ertis,VKO,Sulfates,919.8047,500,112,4
+471,2022-07-27,Nura-Sarysu,Karaganda,Phenols,0.0009,0.001,58,2
+472,2023-04-26,Tobyl-Torgay,Kostanay,Oil Products,0.0251,0.05,49.1,3
+473,2022-11-14,Tobyl-Torgay,Kostanay,Sulfates,1495.6129,500,164.6,4
+474,2020-03-17,Nura-Sarysu,Karaganda,Zinc,0.0283,0.01,151.5,3
+475,2023-01-21,Shu-Talas,Zhambyl,Sulfates,1011.4651,500,117.1,4
+476,2021-02-18,Shu-Talas,Zhambyl,Phenols,0.0026,0.001,141,2
+477,2022-08-22,Shu-Talas,Zhambyl,Copper,0.0023,0.001,128,2
+478,2022-08-30,Balkash-Alakol,Almaty,Oil Products,0.0353,0.05,62.3,3
+479,2020-01-22,Tobyl-Torgay,Kostanay,Oil Products,0.1153,0.05,142.3,3
+480,2021-01-13,Aralo-Syrdarya,Kyzylorda,Phenols,0.0025,0.001,155,2
+481,2021-06-21,Nura-Sarysu,Karaganda,Oil Products,0.087,0.05,104,3
+482,2022-08-25,Esil,Akmoal,Copper,0.0019,0.001,108,2
+483,2020-07-17,Aralo-Syrdarya,Kyzylorda,Nitrates,122.5236,45,163.1,1
+484,2023-07-04,Aralo-Syrdarya,Kyzylorda,Nitrates,33.4145,45,58.1,1
+485,2024-01-19,Esil,Akmoal,Oil Products,0.0673,0.05,95.3,3
+486,2023-05-25,Shu-Talas,Zhambyl,Nitrates,60.9274,45,97.7,1
+487,2021-10-16,Nura-Sarysu,Karaganda,Phenols,0.0029,0.001,160,2
+488,2023-09-09,Zhaiyk-Kaspian,Atyrau,Nitrates,99.1262,45,140.1,1
+489,2023-03-21,Nura-Sarysu,Karaganda,Oil Products,0.1218,0.05,149.8,3
+490,2022-12-31,Esil,Akmoal,Nitrates,69.7589,45,94.5,1
+491,2021-02-19,Shu-Talas,Zhambyl,Zinc,0.0251,0.01,146.5,3
+492,2023-10-22,Nura-Sarysu,Karaganda,Sulfates,1455.0375,500,172.5,4
+493,2022-09-18,Ertis,VKO,Sulfates,387.8928,500,53.8,4
+494,2021-11-06,Nura-Sarysu,Karaganda,Nitrates,8.6672,45,24.6,1
+495,2022-08-12,Aralo-Syrdarya,Kyzylorda,Sulfates,996.5843,500,118.7,4
+496,2022-02-25,Shu-Talas,Zhambyl,Sulfates,1393.7216,500,159.4,4
+497,2022-09-26,Zhaiyk-Kaspian,Atyrau,Phenols,0.0025,0.001,145,2
+498,2023-04-20,Aralo-Syrdarya,Kyzylorda,Oil Products,0.0494,0.05,71.4,3
+499,2021-10-29,Nura-Sarysu,Karaganda,Oil Products,0.1154,0.05,142.4,3
+500,2021-12-13,Balkash-Alakol,Almaty,Oil Products,0.0523,0.05,81.3,3
+501,2023-03-20,Esil,Akmoal,Copper,0.003,0.001,174,2
+502,2020-11-10,Tobyl-Torgay,Kostanay,Oil Products,0.1339,0.05,153.9,3
+503,2020-11-13,Aralo-Syrdarya,Kyzylorda,Oil Products,0.0596,0.05,71.6,3
+504,2022-05-20,Nura-Sarysu,Karaganda,Nitrates,21.7081,45,43.1,1
+505,2020-12-11,Aralo-Syrdarya,Kyzylorda,Oil Products,0.0572,0.05,76.2,3
+506,2023-07-24,Tobyl-Torgay,Kostanay,Oil Products,0.0956,0.05,121.6,3
+507,2020-03-29,Balkash-Alakol,Almaty,Copper,0.0014,0.001,89,2
+508,2022-03-27,Ertis,VKO,Nitrates,10.3641,45,32.5,1
+509,2023-02-03,Ertis,VKO,Nitrates,128.1708,45,170.4,1
+510,2022-06-13,Balkash-Alakol,Almaty,Sulfates,1234.5936,500,137.5,4
+511,2020-05-16,Balkash-Alakol,Almaty,Zinc,0.0073,0.01,64.5,3
+512,2021-07-02,Tobyl-Torgay,Kostanay,Copper,0.0023,0.001,126,2
+513,2021-04-07,Zhaiyk-Kaspian,Atyrau,Phenols,0.0028,0.001,161,2
+514,2020-08-29,Tobyl-Torgay,Kostanay,Copper,0.0022,0.001,133,2
+515,2021-04-25,Ertis,VKO,Nitrates,117.1665,45,151.2,1
+516,2020-05-30,Tobyl-Torgay,Kostanay,Nitrates,120.8758,45,160.3,1
+517,2020-02-09,Esil,Akmoal,Nitrates,12.4016,45,26.8,1
+518,2023-04-12,Nura-Sarysu,Karaganda,Oil Products,0.0769,0.05,99.9,3
+519,2023-04-07,Balkash-Alakol,Almaty,Sulfates,1321.7364,500,145.2,4
+520,2023-08-31,Esil,Akmoal,Zinc,0.0056,0.01,52,3
