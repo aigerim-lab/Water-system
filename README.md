@@ -16,8 +16,24 @@ At the current stage, the project includes:
 - baseline machine learning model for WQI trend forecasting
 - initial analytical visualizations
 
-## Project Structure
+## Analytical Module
 
+The current analytical module includes:
+
+- Ratio calculation
+  ratio = concentration / MPC
+
+- Hazard classification
+  - ratio < 1 → Safe
+  - 1 ≤ ratio < 2 → Moderate
+  - ratio ≥ 2 → High Risk
+
+- WQI-based analysis
+  - average WQI by region
+  - WQI trend over time
+
+- Baseline prediction
+  - Linear Regression model for WQI forecasting
 
 ## Dataset Fields
 
@@ -32,6 +48,8 @@ At the current stage, the project includes:
  - MPC
  - WQI_Score
  - Hazard_Class
+
+![Average WQI Trend](outputs/wqi_trend.png)
 ```bash
 data/            # processed datasets
 analytics/       # analytical and ML scripts
