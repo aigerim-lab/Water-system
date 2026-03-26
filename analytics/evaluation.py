@@ -8,7 +8,7 @@ df = pd.read_excel("Kazakhstan_Water_Pollution_Dataset.xlsx")
 print(df.head())
 
 # если Year еще нет
-df["Year"] = pd.to_datetime(df["Date"]).dt.year
+df["Year"] = pd.to_datetime(df["Date"]).dt.year 
 
 # ratio
 df["ratio"] = df["Concentration"] / df["MPC"]
