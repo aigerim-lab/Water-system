@@ -138,12 +138,53 @@ def apply_theme(theme: str) -> str:
         st.markdown(
             """
             <style>
+            .block-container {
+                padding-top: 4.8rem;
+            }
             .stApp {
                 background-color: #0e1117;
                 color: #e6edf3;
             }
+            .stApp, .stApp p, .stApp span, .stApp label, .stApp li, .stApp h1, .stApp h2, .stApp h3 {
+                color: #e6edf3 !important;
+            }
             [data-testid="stSidebar"] {
                 background-color: #161b22;
+            }
+            [data-testid="stSidebar"] * {
+                color: #e6edf3 !important;
+            }
+            [data-baseweb="select"] > div,
+            [data-baseweb="tag"],
+            [data-baseweb="input"] > div,
+            .stTextInput input,
+            .stSelectbox div[data-baseweb="select"] > div {
+                background-color: #0d1117 !important;
+                color: #e6edf3 !important;
+                border-color: #30363d !important;
+            }
+            .top-nav {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 999;
+                height: 3.5rem;
+                background: rgba(13, 17, 23, 0.95);
+                border-bottom: 1px solid #30363d;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 1rem;
+                backdrop-filter: blur(6px);
+            }
+            .top-nav-title {
+                font-weight: 700;
+                color: #e6edf3;
+            }
+            .top-nav-sub {
+                color: #8b949e;
+                font-size: 0.9rem;
             }
             .hero-card {
                 background: linear-gradient(120deg, #1f6feb, #238636);
@@ -152,11 +193,38 @@ def apply_theme(theme: str) -> str:
                 border-radius: 12px;
                 margin-bottom: 1rem;
             }
+            [data-testid="stMetric"] {
+                background-color: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 12px;
+                padding: 0.6rem 0.8rem;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+            }
             .footer-muted {
                 color: #8b949e;
                 font-size: 0.9rem;
                 text-align: center;
                 padding-bottom: 0.5rem;
+            }
+            .section-title {
+                margin-top: 1.1rem;
+                margin-bottom: 0.45rem;
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: #f0f6fc;
+                letter-spacing: 0.01em;
+            }
+            .section-block {
+                margin-bottom: 1.25rem;
+            }
+            .stButton > button, .stDownloadButton > button {
+                background-color: #1f6feb;
+                color: #ffffff !important;
+                border: 1px solid #3b82f6;
+            }
+            .stButton > button:hover, .stDownloadButton > button:hover {
+                background-color: #1a5fd0;
+                border-color: #60a5fa;
             }
             </style>
             """,
@@ -167,6 +235,35 @@ def apply_theme(theme: str) -> str:
     st.markdown(
         """
         <style>
+        .block-container {
+            padding-top: 4.8rem;
+        }
+        .stApp, .stApp p, .stApp span, .stApp label, .stApp li, .stApp h1, .stApp h2, .stApp h3 {
+            color: #0f172a;
+        }
+        .top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 999;
+            height: 3.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            backdrop-filter: blur(6px);
+        }
+        .top-nav-title {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .top-nav-sub {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
         .hero-card {
             background: linear-gradient(120deg, #1f77b4, #2ca02c);
             color: #ffffff;
@@ -174,11 +271,32 @@ def apply_theme(theme: str) -> str:
             border-radius: 12px;
             margin-bottom: 1rem;
         }
+        [data-testid="stMetric"] {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 0.6rem 0.8rem;
+            box-shadow: 0 3px 12px rgba(15, 23, 42, 0.07);
+        }
         .footer-muted {
             color: #6b7280;
             font-size: 0.9rem;
             text-align: center;
             padding-bottom: 0.5rem;
+        }
+        .section-title {
+            margin-top: 1.1rem;
+            margin-bottom: 0.45rem;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: 0.01em;
+        }
+        .section-block {
+            margin-bottom: 1.25rem;
+        }
+        .stButton > button, .stDownloadButton > button {
+            border-radius: 8px;
         }
         </style>
         """,
@@ -187,14 +305,43 @@ def apply_theme(theme: str) -> str:
     return "plotly_white"
 
 
+def section_header(text: str) -> None:
+    st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
+
+
 def main() -> None:
+    if "ui_theme" not in st.session_state:
+        st.session_state["ui_theme"] = "Light"
+    if "ui_section" not in st.session_state:
+        st.session_state["ui_section"] = "Overview"
+
     with st.sidebar:
         st.header("Display Settings")
-        theme_mode = st.radio("Theme", ["Light", "Dark"], index=0, horizontal=True)
+        theme_mode = st.radio(
+            "Theme",
+            ["Light", "Dark"],
+            key="ui_theme",
+            horizontal=True,
+        )
+        nav_focus = st.selectbox(
+            "Active section",
+            options=["Overview", "Map", "Trend", "Regions", "Prediction", "Export"],
+            key="ui_section",
+        )
     plot_template = apply_theme(theme_mode)
 
     st.markdown(
-        """
+        f"""
+        <div class="top-nav">
+            <div class="top-nav-title">💧 Kazakhstan Water Quality</div>
+            <div class="top-nav-sub">Frontend & Product Dashboard | {nav_focus}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f"""
         <div class="hero-card">
             <h2 style="margin:0;">💧 Kazakhstan Water Quality Dashboard</h2>
             <p style="margin:0.3rem 0 0 0;">
@@ -213,20 +360,34 @@ def main() -> None:
 
     with st.sidebar:
         st.header("Filters")
+        all_regions = sorted(df["Region"].dropna().unique())
+        all_years = sorted(df["Year"].dropna().unique())
+        all_indicators = sorted(df["Pollutant"].dropna().unique())
+        if "selected_regions" not in st.session_state:
+            st.session_state["selected_regions"] = all_regions
+        if "selected_years" not in st.session_state:
+            st.session_state["selected_years"] = all_years
+        if "selected_indicators" not in st.session_state:
+            st.session_state["selected_indicators"] = all_indicators
+        if st.button("Reset filters", use_container_width=True):
+            st.session_state["selected_regions"] = all_regions
+            st.session_state["selected_years"] = all_years
+            st.session_state["selected_indicators"] = all_indicators
+            st.rerun()
         selected_regions = st.multiselect(
             "Region",
-            options=sorted(df["Region"].dropna().unique()),
-            default=sorted(df["Region"].dropna().unique()),
+            options=all_regions,
+            key="selected_regions",
         )
         selected_years = st.multiselect(
             "Year",
-            options=sorted(df["Year"].dropna().unique()),
-            default=sorted(df["Year"].dropna().unique()),
+            options=all_years,
+            key="selected_years",
         )
         selected_indicators = st.multiselect(
             "Indicator (Pollutant)",
-            options=sorted(df["Pollutant"].dropna().unique()),
-            default=sorted(df["Pollutant"].dropna().unique()),
+            options=all_indicators,
+            key="selected_indicators",
         )
 
     filtered_df = df[
@@ -246,7 +407,7 @@ def main() -> None:
     c3.metric("Mean Ratio", f"{kpi['mean_ratio']:.2f}")
     c4.metric("High-Risk Share", f"{kpi['high_risk_share']:.1f}%")
 
-    st.markdown("### Regional Choropleth (Kazakhstan)")
+    section_header("🗺️ Regional Choropleth (Kazakhstan)")
     regional_map = (
         filtered_df.groupby("Region", as_index=False)["WQI_Score"]
         .mean()
@@ -264,12 +425,14 @@ def main() -> None:
     fig_map.update_geos(fitbounds="locations", visible=False)
     fig_map.update_layout(margin={"l": 0, "r": 0, "t": 50, "b": 0})
     fig_map.update_layout(template=plot_template)
+    st.markdown('<div class="section-block">', unsafe_allow_html=True)
     st.plotly_chart(fig_map, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     left, right = st.columns(2)
 
     with left:
-        st.markdown("### Line Chart: WQI Trend")
+        section_header("📈 Line Chart: WQI Trend")
         trend = filtered_df.groupby("Year", as_index=False)["WQI_Score"].mean()
         fig_line = px.line(
             trend,
@@ -279,10 +442,12 @@ def main() -> None:
             title="Average WQI Over Time",
             template=plot_template,
         )
+        st.markdown('<div class="section-block">', unsafe_allow_html=True)
         st.plotly_chart(fig_line, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with right:
-        st.markdown("### Bar Chart: Regions Comparison")
+        section_header("📊 Bar Chart: Regions Comparison")
         region_bar = filtered_df.groupby("Region", as_index=False)["WQI_Score"].mean()
         region_bar = region_bar.sort_values("WQI_Score", ascending=False)
         fig_bar = px.bar(
@@ -294,9 +459,11 @@ def main() -> None:
             title="Average WQI by Region",
             template=plot_template,
         )
+        st.markdown('<div class="section-block">', unsafe_allow_html=True)
         st.plotly_chart(fig_bar, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("### Prediction Chart (Linear Regression)")
+    section_header("🤖 Prediction Chart (Linear Regression)")
     pred_target = st.radio(
         "Prediction target",
         options=["WQI_Score", "Concentration"],
@@ -344,12 +511,14 @@ def main() -> None:
             yaxis_title=pred_target,
             template=plot_template,
         )
+        st.markdown('<div class="section-block">', unsafe_allow_html=True)
         st.plotly_chart(fig_pred, use_container_width=True)
+        st.markdown("</div>", unsafe_allow_html=True)
     else:
         fig_pred = go.Figure()
         st.info("Not enough yearly points for linear regression prediction.")
 
-    st.markdown("### Export")
+    section_header("📦 Export")
     csv_bytes = filtered_df.to_csv(index=False).encode("utf-8")
     st.download_button(
         "Download filtered data as CSV",
