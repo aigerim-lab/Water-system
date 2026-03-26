@@ -2,6 +2,21 @@
 
 This project is a bachelor’s thesis prototype focused on analyzing and visualizing water pollution levels in Kazakhstan using open environmental data.
 
+## Run Dashboard (Frontend & Product)
+
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+The Streamlit product includes:
+- Kazakhstan choropleth map (regional mean WQI)
+- Line chart (WQI trend by year)
+- Bar chart (region comparison)
+- Prediction chart (Linear Regression for WQI/Concentration)
+- Filters: Region, Year, Indicator
+- Export: filtered CSV and chart PNG
+
 ## Current Progress
 
 At the current stage, the project includes:
