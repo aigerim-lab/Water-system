@@ -116,6 +116,16 @@ def fit_linear_regression(year_series: pd.Series, value_series: pd.Series) -> Tu
     return coeffs, trend
 
 
+def regression_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Dict[str, float]:
+    residual = y_true - y_pred
+    sse = float(np.sum(residual**2))
+    sst = float(np.sum((y_true - float(np.mean(y_true))) ** 2))
+    r2 = 1.0 - (sse / sst) if sst > 0 else 0.0
+    mae = float(np.mean(np.abs(residual)))
+    rmse = float(np.sqrt(np.mean(residual**2)))
+    return {"r2": r2, "mae": mae, "rmse": rmse}
+
+
 def build_kpi(df: pd.DataFrame) -> Dict[str, float]:
     return {
         "records": float(len(df)),
@@ -217,6 +227,13 @@ def apply_theme(theme: str) -> str:
             .section-block {
                 margin-bottom: 1.25rem;
             }
+            .chart-card {
+                background: #111722;
+                border: 1px solid #30363d;
+                border-radius: 14px;
+                padding: 0.55rem 0.55rem 0.2rem 0.55rem;
+                box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+            }
             .stButton > button, .stDownloadButton > button {
                 background-color: #1f6feb;
                 color: #ffffff !important;
@@ -295,6 +312,13 @@ def apply_theme(theme: str) -> str:
         .section-block {
             margin-bottom: 1.25rem;
         }
+        .chart-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 0.55rem 0.55rem 0.2rem 0.55rem;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+        }
         .stButton > button, .stDownloadButton > button {
             border-radius: 8px;
         }
@@ -309,23 +333,49 @@ def section_header(text: str) -> None:
     st.markdown(f'<div class="section-title">{text}</div>', unsafe_allow_html=True)
 
 
+def card_open() -> None:
+    st.markdown('<div class="section-block"><div class="chart-card">', unsafe_allow_html=True)
+
+
+def card_close() -> None:
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
+
+def _parse_query_list(param_name: str) -> list[str]:
+    raw_value = st.query_params.get(param_name)
+    if not raw_value:
+        return []
+    return [item for item in str(raw_value).split(",") if item]
+
+
+def _pick_valid_str(value: str | None, allowed: list[str], fallback: str) -> str:
+    if value in allowed:
+        return value
+    return fallback
+
+
 def main() -> None:
+    section_options = ["Overview", "Map", "Trend", "Regions", "Prediction", "Export"]
+    theme_options = ["Light", "Dark"]
+    default_theme = _pick_valid_str(st.query_params.get("theme"), theme_options, "Light")
+    default_section = _pick_valid_str(st.query_params.get("section"), section_options, "Overview")
+
     if "ui_theme" not in st.session_state:
-        st.session_state["ui_theme"] = "Light"
+        st.session_state["ui_theme"] = default_theme
     if "ui_section" not in st.session_state:
-        st.session_state["ui_section"] = "Overview"
+        st.session_state["ui_section"] = default_section
 
     with st.sidebar:
         st.header("Display Settings")
         theme_mode = st.radio(
             "Theme",
-            ["Light", "Dark"],
+            theme_options,
             key="ui_theme",
             horizontal=True,
         )
         nav_focus = st.selectbox(
             "Active section",
-            options=["Overview", "Map", "Trend", "Regions", "Prediction", "Export"],
+            options=section_options,
             key="ui_section",
         )
     plot_template = apply_theme(theme_mode)
@@ -363,12 +413,24 @@ def main() -> None:
         all_regions = sorted(df["Region"].dropna().unique())
         all_years = sorted(df["Year"].dropna().unique())
         all_indicators = sorted(df["Pollutant"].dropna().unique())
+
+        qp_regions = [v for v in _parse_query_list("regions") if v in all_regions]
+        qp_years = []
+        for v in _parse_query_list("years"):
+            try:
+                y = int(v)
+                if y in all_years:
+                    qp_years.append(y)
+            except ValueError:
+                continue
+        qp_indicators = [v for v in _parse_query_list("indicators") if v in all_indicators]
+
         if "selected_regions" not in st.session_state:
-            st.session_state["selected_regions"] = all_regions
+            st.session_state["selected_regions"] = qp_regions or all_regions
         if "selected_years" not in st.session_state:
-            st.session_state["selected_years"] = all_years
+            st.session_state["selected_years"] = qp_years or all_years
         if "selected_indicators" not in st.session_state:
-            st.session_state["selected_indicators"] = all_indicators
+            st.session_state["selected_indicators"] = qp_indicators or all_indicators
         if st.button("Reset filters", use_container_width=True):
             st.session_state["selected_regions"] = all_regions
             st.session_state["selected_years"] = all_years
@@ -400,6 +462,44 @@ def main() -> None:
         st.warning("No data for selected filters. Please widen your selection.")
         return
 
+    section_header("🚨 Risk Alerts")
+    card_open()
+    high_risk_df = filtered_df[filtered_df["Ratio"] > 2].copy()
+    moderate_risk_df = filtered_df[(filtered_df["Ratio"] >= 1) & (filtered_df["Ratio"] <= 2)].copy()
+    if high_risk_df.empty:
+        st.success("No high-risk records (Ratio > 2) found for current filters.")
+    else:
+        st.error(
+            f"High-risk records: {len(high_risk_df)} "
+            f"({len(high_risk_df) / len(filtered_df) * 100:.1f}% of filtered data)."
+        )
+    st.info(
+        f"Moderate-risk records: {len(moderate_risk_df)} "
+        f"({len(moderate_risk_df) / len(filtered_df) * 100:.1f}% of filtered data)."
+    )
+    top_risk_regions = (
+        filtered_df.groupby("Region", as_index=False)
+        .agg(
+            Mean_Ratio=("Ratio", "mean"),
+            High_Risk_Records=("Ratio", lambda x: int((x > 2).sum())),
+            Total_Records=("Ratio", "size"),
+            Mean_WQI=("WQI_Score", "mean"),
+        )
+        .sort_values(["High_Risk_Records", "Mean_Ratio"], ascending=[False, False])
+    )
+    top_risk_regions["High_Risk_Share_%"] = (
+        top_risk_regions["High_Risk_Records"] / top_risk_regions["Total_Records"] * 100
+    ).round(1)
+    st.markdown("**Top risk regions (current filter view):**")
+    st.dataframe(
+        top_risk_regions[
+            ["Region", "High_Risk_Records", "High_Risk_Share_%", "Mean_Ratio", "Mean_WQI"]
+        ].head(8),
+        use_container_width=True,
+        hide_index=True,
+    )
+    card_close()
+
     kpi = build_kpi(filtered_df)
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Records", f"{int(kpi['records'])}")
@@ -425,9 +525,9 @@ def main() -> None:
     fig_map.update_geos(fitbounds="locations", visible=False)
     fig_map.update_layout(margin={"l": 0, "r": 0, "t": 50, "b": 0})
     fig_map.update_layout(template=plot_template)
-    st.markdown('<div class="section-block">', unsafe_allow_html=True)
+    card_open()
     st.plotly_chart(fig_map, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    card_close()
 
     left, right = st.columns(2)
 
@@ -442,9 +542,9 @@ def main() -> None:
             title="Average WQI Over Time",
             template=plot_template,
         )
-        st.markdown('<div class="section-block">', unsafe_allow_html=True)
+        card_open()
         st.plotly_chart(fig_line, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        card_close()
 
     with right:
         section_header("📊 Bar Chart: Regions Comparison")
@@ -459,20 +559,32 @@ def main() -> None:
             title="Average WQI by Region",
             template=plot_template,
         )
-        st.markdown('<div class="section-block">', unsafe_allow_html=True)
+        card_open()
         st.plotly_chart(fig_bar, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        card_close()
 
     section_header("🤖 Prediction Chart (Linear Regression)")
+    pred_options = ["WQI_Score", "Concentration"]
+    if "pred_target" not in st.session_state:
+        st.session_state["pred_target"] = _pick_valid_str(
+            st.query_params.get("pred_target"),
+            pred_options,
+            "WQI_Score",
+        )
     pred_target = st.radio(
         "Prediction target",
-        options=["WQI_Score", "Concentration"],
+        options=pred_options,
+        key="pred_target",
         horizontal=True,
     )
     pred_data = filtered_df.groupby("Year", as_index=False)[pred_target].mean().dropna()
 
     if len(pred_data) >= 2:
         coeffs, trend_fit = fit_linear_regression(pred_data["Year"], pred_data[pred_target])
+        metric_values = regression_metrics(
+            pred_data[pred_target].to_numpy(dtype=float),
+            trend_fit.astype(float),
+        )
         next_year = int(pred_data["Year"].max()) + 1
         next_value = float(np.polyval(coeffs, next_year))
 
@@ -511,12 +623,72 @@ def main() -> None:
             yaxis_title=pred_target,
             template=plot_template,
         )
-        st.markdown('<div class="section-block">', unsafe_allow_html=True)
+        card_open()
         st.plotly_chart(fig_pred, use_container_width=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        mc1, mc2, mc3 = st.columns(3)
+        mc1.metric("R²", f"{metric_values['r2']:.3f}")
+        mc2.metric("MAE", f"{metric_values['mae']:.3f}")
+        mc3.metric("RMSE", f"{metric_values['rmse']:.3f}")
+        card_close()
     else:
         fig_pred = go.Figure()
         st.info("Not enough yearly points for linear regression prediction.")
+
+    section_header("⚖️ Compare Mode")
+    card_open()
+    compare_regions = sorted(filtered_df["Region"].dropna().unique())
+    compare_years = sorted(filtered_df["Year"].dropna().unique())
+    cmp_col1, cmp_col2 = st.columns(2)
+    with cmp_col1:
+        region_a = st.selectbox("Region A", options=compare_regions, key="cmp_region_a")
+        year_range_a = st.selectbox(
+            "Period A (Year)",
+            options=compare_years,
+            key="cmp_year_a",
+        )
+    with cmp_col2:
+        region_b = st.selectbox(
+            "Region B",
+            options=compare_regions,
+            index=1 if len(compare_regions) > 1 else 0,
+            key="cmp_region_b",
+        )
+        year_range_b = st.selectbox(
+            "Period B (Year)",
+            options=compare_years,
+            index=len(compare_years) - 1,
+            key="cmp_year_b",
+        )
+
+    a_df = filtered_df[(filtered_df["Region"] == region_a) & (filtered_df["Year"] == year_range_a)]
+    b_df = filtered_df[(filtered_df["Region"] == region_b) & (filtered_df["Year"] == year_range_b)]
+    if a_df.empty or b_df.empty:
+        st.warning("Comparison needs available data in both selected region-period combinations.")
+    else:
+        a_wqi = float(a_df["WQI_Score"].mean())
+        b_wqi = float(b_df["WQI_Score"].mean())
+        a_ratio = float(a_df["Ratio"].mean())
+        b_ratio = float(b_df["Ratio"].mean())
+        a_high = float((a_df["Ratio"] > 2).mean() * 100)
+        b_high = float((b_df["Ratio"] > 2).mean() * 100)
+
+        cm1, cm2, cm3 = st.columns(3)
+        cm1.metric(
+            "Mean WQI delta (B - A)",
+            f"{(b_wqi - a_wqi):.2f}",
+            delta=f"A: {a_wqi:.2f} | B: {b_wqi:.2f}",
+        )
+        cm2.metric(
+            "Mean Ratio delta (B - A)",
+            f"{(b_ratio - a_ratio):.2f}",
+            delta=f"A: {a_ratio:.2f} | B: {b_ratio:.2f}",
+        )
+        cm3.metric(
+            "High-Risk Share delta (pp)",
+            f"{(b_high - a_high):.1f}",
+            delta=f"A: {a_high:.1f}% | B: {b_high:.1f}%",
+        )
+    card_close()
 
     section_header("📦 Export")
     csv_bytes = filtered_df.to_csv(index=False).encode("utf-8")
@@ -533,7 +705,14 @@ def main() -> None:
         "regions": fig_bar,
         "prediction": fig_pred,
     }
-    export_chart = st.selectbox("Choose chart to export as PNG", list(export_options.keys()))
+    export_keys = list(export_options.keys())
+    if "export_chart" not in st.session_state:
+        st.session_state["export_chart"] = _pick_valid_str(
+            st.query_params.get("export_chart"),
+            export_keys,
+            "map",
+        )
+    export_chart = st.selectbox("Choose chart to export as PNG", export_keys, key="export_chart")
     png_file = figure_to_png_bytes(export_options[export_chart])
     if png_file is not None:
         st.download_button(
@@ -548,6 +727,15 @@ def main() -> None:
     st.markdown("---")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     st.markdown(f'<div class="footer-muted">Last updated: {now_str}</div>', unsafe_allow_html=True)
+
+    # Persist UI and filter state in URL so refresh keeps selections.
+    st.query_params["theme"] = theme_mode
+    st.query_params["section"] = nav_focus
+    st.query_params["regions"] = ",".join(selected_regions)
+    st.query_params["years"] = ",".join(str(int(y)) for y in selected_years)
+    st.query_params["indicators"] = ",".join(selected_indicators)
+    st.query_params["pred_target"] = pred_target
+    st.query_params["export_chart"] = export_chart
 
 
 if __name__ == "__main__":
