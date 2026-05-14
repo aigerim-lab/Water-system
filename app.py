@@ -543,7 +543,7 @@ def main() -> None:
         st.plotly_chart(fig_bar, use_container_width=True)
         card_close()
 
-    section_header("🤖 Prediction Chart (Linear Regression)")
+    section_header("🤖 ML Prediction — 4 Models")
     pred_options = ["WQI_Score", "Concentration"]
     if "pred_target" not in st.session_state:
         st.session_state["pred_target"] = _pick_valid_str(
@@ -560,59 +560,134 @@ def main() -> None:
     pred_data = filtered_df.groupby("Year", as_index=False)[pred_target].mean().dropna()
 
     if len(pred_data) >= 2:
-        coeffs, trend_fit = fit_linear_regression(pred_data["Year"], pred_data[pred_target])
-        metric_values = regression_metrics(
-            pred_data[pred_target].to_numpy(dtype=float),
-            trend_fit.astype(float),
-        )
-        next_year = int(pred_data["Year"].max()) + 1
-        next_value = float(np.polyval(coeffs, next_year))
+        from sklearn.linear_model   import LinearRegression as _LR
+        from sklearn.tree           import DecisionTreeRegressor as _DT
+        from sklearn.ensemble       import RandomForestRegressor as _RF
+        from sklearn.metrics        import r2_score as _r2, mean_absolute_error as _mae, mean_squared_error as _mse
 
-        fig_pred = go.Figure()
-        fig_pred.add_trace(
-            go.Scatter(
-                x=pred_data["Year"],
-                y=pred_data[pred_target],
-                mode="lines+markers",
-                name="Actual",
+        _X      = pred_data[["Year"]].values
+        _y      = pred_data[pred_target].values
+        _next   = int(pred_data["Year"].max()) + 1
+        _Xnext  = np.array([[_next]])
+
+        _model_specs = {
+            "Linear Regression": _LR(),
+            "Decision Tree":     _DT(max_depth=3, random_state=42),
+            "Random Forest":     _RF(n_estimators=200, random_state=42),
+        }
+        # try XGBoost; silently fall back if not installed / libomp missing
+        try:
+            from xgboost import XGBRegressor as _XGB
+            _model_specs["XGBoost"] = _XGB(n_estimators=200, max_depth=3,
+                                            learning_rate=0.1, random_state=42,
+                                            verbosity=0)
+        except Exception:
+            pass
+
+        _colors = {
+            "Linear Regression": "#F59E0B",
+            "Decision Tree":     "#8B5CF6",
+            "Random Forest":     "#10B981",
+            "XGBoost":           "#EF4444",
+        }
+
+        _ml_results = {}
+        for _name, _mdl in _model_specs.items():
+            _mdl.fit(_X, _y)
+            _yhat   = _mdl.predict(_X)
+            _pred25 = float(_mdl.predict(_Xnext)[0])
+            _r2v    = float(_r2(_y, _yhat))
+            _maev   = float(_mae(_y, _yhat))
+            _rmsev  = float(np.sqrt(_mse(_y, _yhat)))
+            _ml_results[_name] = dict(yhat=_yhat, pred=_pred25,
+                                      r2=_r2v, mae=_maev, rmse=_rmsev)
+
+        # ── Tab layout: one tab per model + a combined overview tab ──
+        _tab_names = ["📊 All Models"] + list(_ml_results.keys())
+        _tabs = st.tabs(_tab_names)
+
+        with _tabs[0]:   # combined overlay
+            fig_pred = go.Figure()
+            fig_pred.add_trace(go.Scatter(
+                x=pred_data["Year"], y=_y,
+                mode="lines+markers", name="Actual",
+                line=dict(color="#1E40AF", width=2.5),
+                marker=dict(size=8),
+            ))
+            for _name, _res in _ml_results.items():
+                fig_pred.add_trace(go.Scatter(
+                    x=pred_data["Year"], y=_res["yhat"],
+                    mode="lines", name=f"{_name} fit",
+                    line=dict(dash="dash", color=_colors[_name], width=1.8),
+                ))
+                fig_pred.add_trace(go.Scatter(
+                    x=[_next], y=[_res["pred"]],
+                    mode="markers+text",
+                    text=[f"{_res['pred']:.1f}"],
+                    textposition="top center",
+                    marker=dict(size=11, symbol="triangle-up", color=_colors[_name]),
+                    name=f"{_name} → {_next}",
+                ))
+            fig_pred.update_layout(
+                title=f"All 4 Models — {pred_target} Forecast to {_next}",
+                xaxis_title="Year", yaxis_title=pred_target,
+                template=plot_template, legend=dict(orientation="h", y=-0.25),
             )
-        )
-        fig_pred.add_trace(
-            go.Scatter(
-                x=pred_data["Year"],
-                y=trend_fit,
-                mode="lines",
-                name="Regression line",
-                line={"dash": "dash"},
-            )
-        )
-        fig_pred.add_trace(
-            go.Scatter(
-                x=[next_year],
-                y=[next_value],
-                mode="markers+text",
-                text=[f"Forecast {next_year}"],
-                textposition="top center",
-                marker={"size": 12, "color": "red"},
-                name="Forecast",
-            )
-        )
-        fig_pred.update_layout(
-            title=f"Linear Regression Forecast for {pred_target}",
-            xaxis_title="Year",
-            yaxis_title=pred_target,
-            template=plot_template,
-        )
-        card_open()
-        st.plotly_chart(fig_pred, use_container_width=True)
-        mc1, mc2, mc3 = st.columns(3)
-        mc1.metric("R²", f"{metric_values['r2']:.3f}")
-        mc2.metric("MAE", f"{metric_values['mae']:.3f}")
-        mc3.metric("RMSE", f"{metric_values['rmse']:.3f}")
-        card_close()
+            st.plotly_chart(fig_pred, use_container_width=True)
+            # comparison table
+            _cmp_df = pd.DataFrame([
+                {"Model": k, f"Pred {_next}": f"{v['pred']:.2f}",
+                 "R²": f"{v['r2']:.3f}", "MAE": f"{v['mae']:.3f}",
+                 "RMSE": f"{v['rmse']:.3f}"}
+                for k, v in _ml_results.items()
+            ])
+            st.dataframe(_cmp_df, use_container_width=True, hide_index=True)
+            if any(v["r2"] > 0.95 for k, v in _ml_results.items()
+                   if k != "Linear Regression"):
+                st.caption(
+                    "⚠️ Tree-based R² near 1.0 indicates overfitting on the small "
+                    "temporal dataset (n years). Linear Regression remains the most "
+                    "reliable model for trend characterisation."
+                )
+
+        for _idx, (_name, _res) in enumerate(_ml_results.items(), start=1):
+            with _tabs[_idx]:
+                fig_single = go.Figure()
+                fig_single.add_trace(go.Bar(
+                    x=pred_data["Year"], y=_y,
+                    name="Actual", marker_color="#1E40AF", opacity=0.8,
+                ))
+                fig_single.add_trace(go.Bar(
+                    x=pred_data["Year"], y=_res["yhat"],
+                    name="Predicted", marker_color=_colors[_name], opacity=0.8,
+                ))
+                fig_single.add_trace(go.Scatter(
+                    x=[_next], y=[_res["pred"]],
+                    mode="markers+text",
+                    text=[f"2025 forecast: {_res['pred']:.2f}"],
+                    textposition="top center",
+                    marker=dict(size=13, symbol="triangle-up", color=_colors[_name]),
+                    name=f"Forecast {_next}",
+                ))
+                fig_single.update_layout(
+                    barmode="group",
+                    title=f"{_name} — Actual vs Predicted ({pred_target})",
+                    xaxis_title="Year", yaxis_title=pred_target,
+                    template=plot_template,
+                )
+                card_open()
+                st.plotly_chart(fig_single, use_container_width=True)
+                mc1, mc2, mc3, mc4 = st.columns(4)
+                mc1.metric("R²",          f"{_res['r2']:.3f}")
+                mc2.metric("MAE",         f"{_res['mae']:.3f}")
+                mc3.metric("RMSE",        f"{_res['rmse']:.3f}")
+                mc4.metric(f"Pred {_next}", f"{_res['pred']:.2f}")
+                card_close()
+
+        fig_pred = go.Figure()   # keep downstream export reference valid
     else:
         fig_pred = go.Figure()
-        st.info("Not enough yearly points for linear regression prediction.")
+        st.info("Not enough yearly points for ML prediction (need ≥ 2 years).")
 
     section_header("⚖️ Compare Mode")
     card_open()
