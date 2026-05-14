@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
@@ -19,84 +20,48 @@ st.set_page_config(
 
 DATA_PATH = Path("db/Kazakhstan_Water_Pollution_Dataset.csv")
 
-# Approximate polygons to keep the choropleth fully local/offline.
-REGION_GEOJSON = {
-    "type": "FeatureCollection",
-    "features": [
-        {
-            "type": "Feature",
-            "id": "VKO",
-            "properties": {"name": "VKO"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[80, 47], [86, 47], [86, 51], [80, 51], [80, 47]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Karaganda",
-            "properties": {"name": "Karaganda"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[67, 46], [76, 46], [76, 50], [67, 50], [67, 46]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Kostanay",
-            "properties": {"name": "Kostanay"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[62, 51], [68, 51], [68, 54], [62, 54], [62, 51]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Akmoal",
-            "properties": {"name": "Akmoal"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[67, 50], [73, 50], [73, 54], [67, 54], [67, 50]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Almaty",
-            "properties": {"name": "Almaty"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[75, 43], [82, 43], [82, 46], [75, 46], [75, 43]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Zhambyl",
-            "properties": {"name": "Zhambyl"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[69, 42], [75, 42], [75, 45], [69, 45], [69, 42]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Kyzylorda",
-            "properties": {"name": "Kyzylorda"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[60, 43], [68, 43], [68, 46], [60, 46], [60, 43]]],
-            },
-        },
-        {
-            "type": "Feature",
-            "id": "Atyrau",
-            "properties": {"name": "Atyrau"},
-            "geometry": {
-                "type": "Polygon",
-                "coordinates": [[[50, 45], [56, 45], [56, 49], [50, 49], [50, 45]]],
-            },
-        },
-    ],
+# kz.json is bundled alongside app.py (source: simplemaps.com — CC BY 4.0).
+# It contains precise MultiPolygon boundaries for all 20 KZ administrative
+# regions.  We remap our 8 dataset labels to the names used in that file.
+KZ_GEOJSON_PATH = Path("kz.json")
+
+# Dataset label  →  kz.json "name" field
+REGION_NAME_MAP: dict[str, str] = {
+    "VKO":       "East Kazakhstan",
+    "Karaganda": "Karaganda",
+    "Kostanay":  "Kostanay",
+    "Akmoal":    "Akmola",
+    "Almaty":    "Almaty",
+    "Zhambyl":   "Jambyl",
+    "Kyzylorda": "Kyzylorda",
+    "Atyrau":    "Atyrau",
 }
+
+
+@st.cache_data(show_spinner="Loading Kazakhstan map boundaries…")
+def load_kz_geojson() -> dict:
+    """
+    Load kz.json (simplemaps.com, CC BY 4.0) and inject a 'region_key' id
+    that matches our 8 dataset Region labels so choropleth_mapbox can join
+    the WQI values to the correct polygon.
+
+    Regions not in our dataset are retained but will appear grey (no data).
+    """
+    with open(KZ_GEOJSON_PATH, encoding="utf-8") as fh:
+        raw = json.load(fh)
+
+    # Build reverse map:  lowercase kz.json name  →  dataset label
+    rev: dict[str, str] = {v.lower(): k for k, v in REGION_NAME_MAP.items()}
+
+    for feat in raw["features"]:
+        props = feat.setdefault("properties", {})
+        raw_name: str = props.get("name", "")
+        # Map to our dataset key if known, otherwise keep the original name
+        region_key = rev.get(raw_name.lower(), raw_name)
+        props["region_key"] = region_key
+        feat["id"] = region_key          # used by featureidkey="id"
+
+    return raw
 
 
 @st.cache_data
@@ -513,18 +478,33 @@ def main() -> None:
         .mean()
         .rename(columns={"WQI_Score": "Mean_WQI"})
     )
-    fig_map = px.choropleth(
+    kz_geojson = load_kz_geojson()
+    fig_map = px.choropleth_mapbox(
         regional_map,
-        geojson=REGION_GEOJSON,
+        geojson=kz_geojson,
         locations="Region",
         featureidkey="id",
         color="Mean_WQI",
         color_continuous_scale="YlOrRd",
+        range_color=(regional_map["Mean_WQI"].min() * 0.95,
+                     regional_map["Mean_WQI"].max() * 1.05),
+        mapbox_style="carto-positron",   # free tile — no token required
+        zoom=3.8,
+        center={"lat": 48.0, "lon": 66.0},  # centre of Kazakhstan
+        opacity=0.75,
+        hover_name="Region",
+        hover_data={"Mean_WQI": ":.2f"},
         title="Average WQI by Region",
+        labels={"Mean_WQI": "WQI Score"},
     )
-    fig_map.update_geos(fitbounds="locations", visible=False)
-    fig_map.update_layout(margin={"l": 0, "r": 0, "t": 50, "b": 0})
-    fig_map.update_layout(template=plot_template)
+    fig_map.update_layout(
+        margin={"l": 0, "r": 0, "t": 50, "b": 0},
+        template=plot_template,
+        coloraxis_colorbar=dict(
+            title="WQI Score",
+            tickfont=dict(size=11),
+        ),
+    )
     card_open()
     st.plotly_chart(fig_map, use_container_width=True)
     card_close()

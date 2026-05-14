@@ -70,3 +70,12 @@ data/            # processed datasets
 analytics/       # analytical and ML scripts
 outputs/         # generated visualizations
 
+## System Dependencies
+
+### macOS only
+XGBoost requires OpenMP. Install it before running:
+```bash
+brew install libomp
+
+### Windows / Linux
+No extra steps needed — XGBoost installs directly via pip.
