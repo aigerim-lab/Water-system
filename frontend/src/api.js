@@ -27,6 +27,7 @@ export const api = {
   charts: (filters) => post('/api/dashboard/charts', filters),
   ml: (filters, target) => post('/api/dashboard/ml', { ...filters, target }),
   compare: (payload) => post('/api/dashboard/compare', payload),
+  chat: (payload) => post('/api/dashboard/chat', payload),
   exportCsv: async (filters) => {
     const res = await fetch(`${API_BASE}/api/dashboard/export/csv`, {
       method: 'POST',

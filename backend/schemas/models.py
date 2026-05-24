@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -29,3 +29,8 @@ class CompareRequest(BaseModel):
 
 class MLRequest(FilterRequest):
     target: str = "WQI_Score"
+
+
+class ChatRequest(FilterRequest):
+    message: str = Field(..., min_length=1, max_length=2000)
+    lang: Literal["en", "ru"] = "en"

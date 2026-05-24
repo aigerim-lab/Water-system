@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js'
 import { api } from './api.js'
 import { useLanguage } from './i18n/LanguageContext.jsx'
 import { LanguageSwitcher } from './i18n/LanguageSwitcher.jsx'
+import { ChatPanel } from './components/ChatPanel.jsx'
 
 const DEFAULT_SOURCES = ['observed', 'reconstructed']
 
@@ -125,6 +126,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [activeModule, setActiveModule] = useState('overview')
   const [filtersOpen, setFiltersOpen] = useState(true)
+  const [chatOpen, setChatOpen] = useState(false)
 
   const sourceLabels = useMemo(() => ({
     observed: t('sources.observed'),
@@ -626,6 +628,12 @@ export default function App() {
           <span>{t('footer.records', { count: recordCount })}</span>
         </div>
       </footer>
+
+      <ChatPanel
+        filters={body()}
+        open={chatOpen}
+        onToggle={() => setChatOpen((o) => !o)}
+      />
     </div>
   )
 }

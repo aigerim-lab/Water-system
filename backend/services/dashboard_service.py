@@ -17,6 +17,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from analytics.ai_insights import generate_insights
+from analytics.chat_assistant import chat as chat_assistant
 from analytics.ml_engine import (
     comparison_df_from_records,
     prepare_yearly_series,
@@ -158,6 +159,9 @@ class DashboardService:
 
     def insights(self, df: pd.DataFrame) -> list[str]:
         return generate_insights(df)
+
+    def chat(self, df: pd.DataFrame, message: str, lang: str = "en") -> dict:
+        return chat_assistant(message, df, lang=lang)
 
     def compare(
         self,

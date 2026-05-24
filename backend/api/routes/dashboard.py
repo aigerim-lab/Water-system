@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Response
 
-from backend.schemas.models import CompareRequest, FilterRequest, MLRequest
+from backend.schemas.models import ChatRequest, CompareRequest, FilterRequest, MLRequest
 from backend.services.dashboard_service import dashboard_service
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -77,6 +77,12 @@ def dashboard_compare(body: CompareRequest):
     return dashboard_service.compare(
         filtered, body.region_a, body.year_a, body.region_b, body.year_b
     )
+
+
+@router.post("/chat")
+def dashboard_chat(body: ChatRequest):
+    filtered = _filtered(body)
+    return dashboard_service.chat(filtered, body.message, lang=body.lang)
 
 
 @router.post("/export/csv")

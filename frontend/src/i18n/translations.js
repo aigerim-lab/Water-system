@@ -117,6 +117,21 @@ const en = {
     standards: 'SanPiN / MPC standards',
     records: '{count} records',
   },
+  chat: {
+    title: 'AquaMonitor AI',
+    subtitle: 'Context-aware · current filters',
+    welcome: 'Hi! I can explain WQI, risks, regions, and trends for your current filter selection. What would you like to know?',
+    placeholder: 'Ask about water quality…',
+    send: 'Send',
+    thinking: 'Analyzing…',
+    error: 'Chat error:',
+    open: 'Open AI chat',
+    close: 'Close chat',
+    modeRules: 'Rules',
+    suggest1: 'What is the mean WQI for chemical pollutants?',
+    suggest2: 'Which region has the most high-risk records?',
+    suggest3: 'Is chemical water quality improving or deteriorating?',
+  },
 }
 
 const ru = {
@@ -230,6 +245,21 @@ const ru = {
     thesis: 'AquaMonitor · дипломный проект',
     standards: 'Стандарты SanPiN / ПДК',
     records: '{count} записей',
+  },
+  chat: {
+    title: 'AquaMonitor AI',
+    subtitle: 'С учётом текущих фильтров',
+    welcome: 'Привет! Могу объяснить WQI, риски, регионы и тренды для вашей выборки. О чём рассказать?',
+    placeholder: 'Спросите о качестве воды…',
+    send: 'Отправить',
+    thinking: 'Анализ…',
+    error: 'Ошибка чата:',
+    open: 'Открыть AI чат',
+    close: 'Закрыть чат',
+    modeRules: 'Правила',
+    suggest1: 'Какой средний WQI по химическим показателям?',
+    suggest2: 'В каком регионе больше всего записей высокого риска?',
+    suggest3: 'Улучшается или ухудшается качество по химии?',
   },
 }
 
