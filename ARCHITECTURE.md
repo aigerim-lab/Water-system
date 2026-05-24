@@ -8,7 +8,7 @@
 └──────────────────────────┬──────────────────────────────────┘
                            │ REST /api/*
 ┌──────────────────────────▼──────────────────────────────────┐
-│  BACKEND  FastAPI  backend/main.py  (:8000)                   │
+│  BACKEND  FastAPI  backend/main.py  (:8001)                   │
 │  backend/services/dashboard_service.py                         │
 └──────────────────────────┬──────────────────────────────────┘
                            │
@@ -25,7 +25,7 @@
 cd Water-system
 python3 -m pip install -r requirements.txt
 python3 -m data.build_dataset
-python3 -m uvicorn backend.main:app --reload --port 8000
+python3 -m uvicorn backend.main:app --reload --port 8001
 
 # Terminal 2 — React frontend
 cd frontend
@@ -45,4 +45,4 @@ Open **http://localhost:8501**
 
 ## API docs
 
-With backend running: **http://localhost:8000/docs**
+With backend running: **http://localhost:8001/docs**
