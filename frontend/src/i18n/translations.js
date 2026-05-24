@@ -1,0 +1,260 @@
+export const DEFAULT_LANG = 'en'
+
+export const LANGUAGES = [
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+]
+
+const en = {
+  brandSub: 'Water monitoring · Kazakhstan',
+  nav: {
+    overview: 'Overview',
+    analytics: 'Maps & Charts',
+    ml: 'Forecast',
+    compare: 'Compare',
+  },
+  status: {
+    updating: 'Updating…',
+    current: 'Data is current',
+  },
+  exportCsv: 'Export CSV',
+  filters: {
+    title: 'Data filters',
+    resetAll: 'Reset all',
+    all: 'All',
+    clear: 'Clear',
+    source: 'Data source',
+    region: 'Region',
+    year: 'Year',
+    pollutant: 'Pollutant',
+    chipSource: 'Source',
+    chipRegions: 'Regions',
+    chipYears: 'Years',
+    chipPollutants: 'Pollutants',
+    of: '{n} of {total}',
+  },
+  sources: {
+    observed: 'Kazhydromet',
+    reconstructed: 'Chemical',
+    reference: 'Reference',
+  },
+  errors: {
+    loadFailed: 'Failed to load data:',
+  },
+  overview: {
+    tag: 'System overview',
+    title: 'Current water quality status',
+    desc: 'Summary for selected regions, years, and pollutants. WQI metrics and the share of high-risk records.',
+    meta: '{count} records · mean WQI {wqi}',
+    kpiRecords: 'Total records',
+    kpiWqi: 'Mean WQI',
+    kpiPollution: 'Pollution',
+    kpiHighRisk: 'High risk',
+    kpiObserved: 'Observed',
+    kpiReconstructed: 'Reconstructed',
+    kpiReference: 'Reference',
+    mpcUnit: '× MPC',
+    riskTitle: 'Risk assessment',
+    riskSubtitle: '{count} records above the pollution threshold',
+    highRisk: 'High risk — ratio > 2.0 × MPC',
+    modRisk: 'Moderate risk — ratio 1.0 to 2.0 × MPC',
+    ofSample: '{pct}% of sample',
+    thRegion: 'Region',
+    thHighRisk: 'High risk',
+    thShare: 'Share',
+    thMeanRatio: 'Mean ratio',
+    thMeanWqi: 'Mean WQI',
+    insightsTitle: 'Automated insights',
+    insightsSub: 'Rule-based analysis · no external API',
+  },
+  analytics: {
+    tag: 'Visualization',
+    title: 'Maps and charts',
+    desc: 'WQI distribution by region, trends over time, and pollutant heatmaps.',
+    mapTitle: 'Regional WQI map',
+    mapSub: 'Mean water quality index by region',
+    trendTitle: 'Trend over time',
+    trendSub: 'Mean WQI by year',
+    rankTitle: 'Regional ranking',
+    rankSub: 'Comparison of mean WQI values',
+    matrixTitle: 'Pollutant matrix',
+    matrixSub: 'Mean concentration-to-MPC ratio',
+    yoyTitle: 'Year-over-year change',
+    yoySub: 'Regions improving vs deteriorating',
+  },
+  ml: {
+    tag: 'Machine learning',
+    title: 'Water quality forecast',
+    meta: 'Forecast for {year}',
+    unavailableTitle: 'Forecast unavailable',
+    unavailableDesc: 'Not enough data to build a model with the current filters. Try widening the selection.',
+    panelTitle: 'Model comparison',
+    targetWqi: 'WQI index',
+    targetConc: 'Concentration',
+    overfitWarn: 'Tree and boosting models may overfit on small samples (n < 10). Prefer cross-validation metrics and linear regression.',
+    thModel: 'Model',
+    thForecast: 'Forecast {year}',
+    thOverfit: 'Overfit',
+    yes: 'Yes',
+    no: 'No',
+  },
+  compare: {
+    tag: 'Comparative analysis',
+    title: 'Region and period comparison',
+    desc: 'Pick two regions and years — the system shows differences in WQI, pollution, and high-risk share.',
+    panelTitle: 'Select periods to compare',
+    periodA: 'First period',
+    periodB: 'Second period',
+    vs: 'vs',
+    submit: 'Compare periods',
+    wqiChange: 'WQI change',
+    pollutionChange: 'Pollution change',
+    riskChange: 'High-risk change',
+    pp: 'pp',
+  },
+  footer: {
+    thesis: 'AquaMonitor · diploma thesis',
+    standards: 'SanPiN / MPC standards',
+    records: '{count} records',
+  },
+}
+
+const ru = {
+  brandSub: 'Мониторинг воды · Казахстан',
+  nav: {
+    overview: 'Обзор',
+    analytics: 'Карты и графики',
+    ml: 'Прогноз',
+    compare: 'Сравнение',
+  },
+  status: {
+    updating: 'Обновление…',
+    current: 'Данные актуальны',
+  },
+  exportCsv: 'Скачать CSV',
+  filters: {
+    title: 'Фильтры данных',
+    resetAll: 'Сбросить всё',
+    all: 'Все',
+    clear: 'Сброс',
+    source: 'Источник данных',
+    region: 'Регион',
+    year: 'Год',
+    pollutant: 'Загрязнитель',
+    chipSource: 'Источник',
+    chipRegions: 'Регионы',
+    chipYears: 'Годы',
+    chipPollutants: 'Загрязнители',
+    of: '{n} из {total}',
+  },
+  sources: {
+    observed: 'Казгидромет',
+    reconstructed: 'Хим. данные',
+    reference: 'Справочные',
+  },
+  errors: {
+    loadFailed: 'Ошибка загрузки:',
+  },
+  overview: {
+    tag: 'Обзор системы',
+    title: 'Текущее состояние качества воды',
+    desc: 'Сводка по выбранным регионам, годам и загрязнителям. Показатели WQI и доля записей с повышенным риском.',
+    meta: '{count} записей · средний WQI {wqi}',
+    kpiRecords: 'Всего записей',
+    kpiWqi: 'Средний WQI',
+    kpiPollution: 'Загрязнение',
+    kpiHighRisk: 'Высокий риск',
+    kpiObserved: 'Наблюдаемые',
+    kpiReconstructed: 'Реконструкция',
+    kpiReference: 'Справочные',
+    mpcUnit: '× ПДК',
+    riskTitle: 'Оценка рисков',
+    riskSubtitle: '{count} записей с превышением порога загрязнения',
+    highRisk: 'Высокий риск — отношение > 2.0 × ПДК',
+    modRisk: 'Умеренный риск — от 1.0 до 2.0 × ПДК',
+    ofSample: '{pct}% от выборки',
+    thRegion: 'Регион',
+    thHighRisk: 'Высокий риск',
+    thShare: 'Доля',
+    thMeanRatio: 'Ср. отношение',
+    thMeanWqi: 'Ср. WQI',
+    insightsTitle: 'Аналитические выводы',
+    insightsSub: 'Автоматический анализ на основе правил',
+  },
+  analytics: {
+    tag: 'Визуализация',
+    title: 'Карты и графики',
+    desc: 'Распределение WQI по регионам, динамика во времени и матрица загрязнителей.',
+    mapTitle: 'Карта WQI по регионам',
+    mapSub: 'Средний индекс качества воды',
+    trendTitle: 'Динамика по годам',
+    trendSub: 'Средний WQI за каждый год',
+    rankTitle: 'Рейтинг регионов',
+    rankSub: 'Сравнение средних значений WQI',
+    matrixTitle: 'Матрица загрязнителей',
+    matrixSub: 'Среднее отношение концентрации к ПДК',
+    yoyTitle: 'Изменение год к году',
+    yoySub: 'Регионы с улучшением и ухудшением показателей',
+  },
+  ml: {
+    tag: 'Машинное обучение',
+    title: 'Прогноз качества воды',
+    meta: 'Прогноз на {year} год',
+    unavailableTitle: 'Прогноз недоступен',
+    unavailableDesc: 'Недостаточно данных для построения модели при текущих фильтрах. Попробуйте расширить выборку.',
+    panelTitle: 'Сравнение моделей',
+    targetWqi: 'Индекс WQI',
+    targetConc: 'Концентрация',
+    overfitWarn: 'Деревья и бустинг могут переобучаться на малой выборке (n < 10). Ориентируйтесь на кросс-валидацию и линейную регрессию.',
+    thModel: 'Модель',
+    thForecast: 'Прогноз {year}',
+    thOverfit: 'Переобучение',
+    yes: 'Да',
+    no: 'Нет',
+  },
+  compare: {
+    tag: 'Сравнительный анализ',
+    title: 'Сравнение регионов и периодов',
+    desc: 'Выберите два региона и годы — система покажет разницу по WQI, загрязнению и доле высокого риска.',
+    panelTitle: 'Выбор периодов для сравнения',
+    periodA: 'Первый период',
+    periodB: 'Второй период',
+    vs: 'и',
+    submit: 'Сравнить периоды',
+    wqiChange: 'Изменение WQI',
+    pollutionChange: 'Изменение загрязнения',
+    riskChange: 'Изменение высокого риска',
+    pp: 'п.п.',
+  },
+  footer: {
+    thesis: 'AquaMonitor · дипломный проект',
+    standards: 'Стандарты SanPiN / ПДК',
+    records: '{count} записей',
+  },
+}
+
+export const translations = { en, ru }
+
+/** Resolve dot path and replace {key} placeholders */
+export function translate(lang, key, params = {}) {
+  const dict = translations[lang] || translations.en
+  const parts = key.split('.')
+  let value = dict
+  for (const p of parts) {
+    value = value?.[p]
+    if (value === undefined) {
+      value = translations.en
+      for (const q of parts) value = value?.[q]
+      break
+    }
+  }
+  if (typeof value !== 'string') return key
+  return value.replace(/\{(\w+)\}/g, (_, k) => (params[k] != null ? String(params[k]) : `{${k}}`))
+}
+
+export const LOCALE_MAP = { en: 'en-US', ru: 'ru-RU' }
+
+export const PAGE_TITLES = {
+  en: 'AquaMonitor — Water Quality Monitoring',
+  ru: 'AquaMonitor — Мониторинг качества воды',
+}

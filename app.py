@@ -1,3 +1,15 @@
+"""
+Kazakhstan Water Quality Dashboard.
+
+Architecture: three-layer separation
+  - Data layer:      data/loader.py, data/validator.py, db/kazakhstan_water_master.csv
+  - Business logic:  analytics/wqi.py, analytics/hazard.py, config/settings.py
+  - Presentation:    this Streamlit application
+
+Streamlit enables rapid analytical dashboards for thesis defence; the SQLite/CSV
+store supports a future migration path to PostgreSQL without changing business logic.
+"""
+
 from __future__ import annotations
 
 import json
@@ -12,30 +24,38 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from config.logging_config import get_logger
+from config.settings import (
+    DATASET_BANNER,
+    DATA_PATH,
+    GEOJSON_PATH,
+    LIMITATIONS,
+    ML_DISCLAIMER,
+    MODEL_COLORS,
+    REGION_NAME_MAP,
+    TREE_MODEL_NAMES,
+    WHY_NOT_DEEP_LEARNING,
+)
+from analytics.ai_insights import generate_insights
+from analytics.ml_engine import (
+    comparison_df_from_records,
+    prepare_yearly_series,
+    train_and_compare,
+)
+from analytics.shap_analysis import compute_shap_values
+from data.loader import data_quality_summary, load_enriched
+from data.validator import DataValidator
+from visualization.charts import build_pollutant_region_heatmap, build_yoy_wqi_delta
+
+logger = get_logger(__name__)
+
 st.set_page_config(
     page_title="Kazakhstan Water Quality Dashboard",
     page_icon="💧",
     layout="wide",
 )
 
-DATA_PATH = Path("db/Kazakhstan_Water_Pollution_Dataset.csv")
-
-# kz.json is bundled alongside app.py (source: simplemaps.com — CC BY 4.0).
-# It contains precise MultiPolygon boundaries for all 20 KZ administrative
-# regions.  We remap our 8 dataset labels to the names used in that file.
-KZ_GEOJSON_PATH = Path("kz.json")
-
-# Dataset label  →  kz.json "name" field
-REGION_NAME_MAP: dict[str, str] = {
-    "VKO":       "East Kazakhstan",
-    "Karaganda": "Karaganda",
-    "Kostanay":  "Kostanay",
-    "Akmoal":    "Akmola",
-    "Almaty":    "Almaty",
-    "Zhambyl":   "Jambyl",
-    "Kyzylorda": "Kyzylorda",
-    "Atyrau":    "Atyrau",
-}
+KZ_GEOJSON_PATH = GEOJSON_PATH
 
 
 @st.cache_data(show_spinner="Loading Kazakhstan map boundaries…")
@@ -66,11 +86,11 @@ def load_kz_geojson() -> dict:
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
-    df = pd.read_csv(DATA_PATH)
-    df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
-    df["Year"] = df["Date"].dt.year
-    df["Ratio"] = np.where(df["MPC"] > 0, df["Concentration"] / df["MPC"], np.nan)
-    return df.dropna(subset=["Date", "Year"])
+    df = load_enriched()
+    report = DataValidator(strict=False).validate(df)
+    if not report.passed:
+        logger.error("Dataset validation failed: %s", report.errors)
+    return df
 
 
 def fit_linear_regression(year_series: pd.Series, value_series: pd.Series) -> Tuple[np.ndarray, np.ndarray]:
@@ -100,11 +120,34 @@ def build_kpi(df: pd.DataFrame) -> Dict[str, float]:
     }
 
 
+@st.cache_data
+def _cached_ml_results(years_tuple: tuple, values_tuple: tuple, forecast_year: int) -> tuple:
+    """Cache ML training keyed by yearly series (avoids retrain on every rerun)."""
+    years = np.array(years_tuple, dtype=float)
+    values = np.array(values_tuple, dtype=float)
+    results = train_and_compare(years, values, forecast_year=forecast_year, n_cv_splits=3)
+    serializable = []
+    for r in results:
+        serializable.append(
+            {
+                "name": r.name,
+                "yhat": r.yhat.tolist(),
+                "pred_next": r.pred_next,
+                "insample": r.insample,
+                "cv": r.cv,
+                "n_samples": r.n_samples,
+                "overfitting_warning": r.overfitting_warning,
+            }
+        )
+    return tuple(serializable), forecast_year
+
+
 def figure_to_png_bytes(fig: go.Figure) -> BytesIO | None:
     try:
         png_bytes = fig.to_image(format="png", width=1400, height=800, scale=2)
         return BytesIO(png_bytes)
     except Exception:
+        logger.exception("PNG export failed")
         return None
 
 
@@ -367,14 +410,36 @@ def main() -> None:
         unsafe_allow_html=True,
     )
 
+    st.info(f"ℹ️ {DATASET_BANNER}")
+
     if not DATA_PATH.exists():
-        st.error(f"Dataset not found: {DATA_PATH}")
+        st.error(f"Dataset not found: {DATA_PATH}. Run: python -m data.build_dataset")
         return
 
     df = load_data()
 
     with st.sidebar:
         st.header("Filters")
+        all_sources = sorted(df["data_source"].dropna().unique()) if "data_source" in df.columns else ["reconstructed"]
+        source_labels = {
+            "observed": "Observed (Kazhydromet)",
+            "reconstructed": "Reconstructed (chemical)",
+            "reference": "Reference (international)",
+        }
+        default_sources = [s for s in ["observed", "reconstructed"] if s in all_sources] or all_sources
+
+        if "selected_sources" not in st.session_state:
+            st.session_state["selected_sources"] = default_sources
+
+        selected_sources = st.multiselect(
+            "Data source",
+            options=all_sources,
+            format_func=lambda x: source_labels.get(x, x),
+            key="selected_sources",
+        )
+
+        df = df[df["data_source"].isin(selected_sources)] if "data_source" in df.columns else df
+
         all_regions = sorted(df["Region"].dropna().unique())
         all_years = sorted(df["Year"].dropna().unique())
         all_indicators = sorted(df["Pollutant"].dropna().unique())
@@ -417,6 +482,15 @@ def main() -> None:
             key="selected_indicators",
         )
 
+        with st.expander("About & Limitations"):
+            st.markdown("**Dataset provenance**")
+            dq = data_quality_summary(df)
+            for src, pct in dq.get("sources", {}).items():
+                st.write(f"- {source_labels.get(src, src)}: {pct}%")
+            st.markdown("**Known limitations**")
+            for lim in LIMITATIONS:
+                st.caption(lim)
+
     filtered_df = df[
         df["Region"].isin(selected_regions)
         & df["Year"].isin(selected_years)
@@ -425,7 +499,18 @@ def main() -> None:
 
     if filtered_df.empty:
         st.warning("No data for selected filters. Please widen your selection.")
+        logger.warning("Empty DataFrame after filter application")
         return
+
+    section_header("📋 Data Quality Summary")
+    card_open()
+    dq = data_quality_summary(filtered_df)
+    dc1, dc2, dc3, dc4 = st.columns(4)
+    dc1.metric("Records (n)", f"{dq['total']:,}")
+    dc2.metric("Observed %", f"{dq.get('observed_pct', 0):.1f}%")
+    dc3.metric("Reconstructed %", f"{dq.get('reconstructed_pct', 0):.1f}%")
+    dc4.metric("Reference %", f"{dq.get('reference_pct', 0):.1f}%")
+    card_close()
 
     section_header("🚨 Risk Alerts")
     card_open()
@@ -543,7 +628,31 @@ def main() -> None:
         st.plotly_chart(fig_bar, use_container_width=True)
         card_close()
 
-    section_header("🤖 ML Prediction — 4 Models")
+    section_header("🗺️ Pollutant × Region Heatmap")
+    fig_heatmap = build_pollutant_region_heatmap(
+        filtered_df, template=plot_template, n_records=len(filtered_df)
+    )
+    card_open()
+    st.plotly_chart(fig_heatmap, use_container_width=True)
+    card_close()
+
+    section_header("📉 Year-over-Year WQI Delta by Region")
+    fig_yoy = build_yoy_wqi_delta(filtered_df, template=plot_template)
+    card_open()
+    st.plotly_chart(fig_yoy, use_container_width=True)
+    card_close()
+
+    section_header("💡 AI Insights (rule-based)")
+    card_open()
+    for line in generate_insights(filtered_df):
+        st.markdown(line)
+    card_close()
+
+    section_header("🤖 ML Prediction — Comparative Study")
+    st.caption(
+        f"Validation: TimeSeriesSplit CV | Metrics: MAE, RMSE, R², MAPE | {ML_DISCLAIMER}"
+    )
+    st.caption(f"ℹ️ {WHY_NOT_DEEP_LEARNING}")
     pred_options = ["WQI_Score", "Concentration"]
     if "pred_target" not in st.session_state:
         st.session_state["pred_target"] = _pick_valid_str(
@@ -557,136 +666,130 @@ def main() -> None:
         key="pred_target",
         horizontal=True,
     )
-    pred_data = filtered_df.groupby("Year", as_index=False)[pred_target].mean().dropna()
+    pred_data = prepare_yearly_series(filtered_df, pred_target)
+    fig_pred = go.Figure()
 
     if len(pred_data) >= 2:
-        from sklearn.linear_model   import LinearRegression as _LR
-        from sklearn.tree           import DecisionTreeRegressor as _DT
-        from sklearn.ensemble       import RandomForestRegressor as _RF
-        from sklearn.metrics        import r2_score as _r2, mean_absolute_error as _mae, mean_squared_error as _mse
+        _years = pred_data["Year"].astype(int).tolist()
+        _y = pred_data[pred_target].tolist()
+        _next = int(max(_years)) + 1
 
-        _X      = pred_data[["Year"]].values
-        _y      = pred_data[pred_target].values
-        _next   = int(pred_data["Year"].max()) + 1
-        _Xnext  = np.array([[_next]])
+        _cached, _ = _cached_ml_results(tuple(_years), tuple(_y), _next)
+        _colors = MODEL_COLORS
 
-        _model_specs = {
-            "Linear Regression": _LR(),
-            "Decision Tree":     _DT(max_depth=3, random_state=42),
-            "Random Forest":     _RF(n_estimators=200, random_state=42),
-        }
-        # try XGBoost; silently fall back if not installed / libomp missing
-        try:
-            from xgboost import XGBRegressor as _XGB
-            _model_specs["XGBoost"] = _XGB(n_estimators=200, max_depth=3,
-                                            learning_rate=0.1, random_state=42,
-                                            verbosity=0)
-        except Exception:
-            pass
-
-        _colors = {
-            "Linear Regression": "#F59E0B",
-            "Decision Tree":     "#8B5CF6",
-            "Random Forest":     "#10B981",
-            "XGBoost":           "#EF4444",
-        }
-
-        _ml_results = {}
-        for _name, _mdl in _model_specs.items():
-            _mdl.fit(_X, _y)
-            _yhat   = _mdl.predict(_X)
-            _pred25 = float(_mdl.predict(_Xnext)[0])
-            _r2v    = float(_r2(_y, _yhat))
-            _maev   = float(_mae(_y, _yhat))
-            _rmsev  = float(np.sqrt(_mse(_y, _yhat)))
-            _ml_results[_name] = dict(yhat=_yhat, pred=_pred25,
-                                      r2=_r2v, mae=_maev, rmse=_rmsev)
-
-        # ── Tab layout: one tab per model + a combined overview tab ──
-        _tab_names = ["📊 All Models"] + list(_ml_results.keys())
+        _tab_names = ["📊 All Models (ranked)"] + [r["name"] for r in _cached]
         _tabs = st.tabs(_tab_names)
 
-        with _tabs[0]:   # combined overlay
+        with _tabs[0]:
             fig_pred = go.Figure()
             fig_pred.add_trace(go.Scatter(
-                x=pred_data["Year"], y=_y,
+                x=_years, y=_y,
                 mode="lines+markers", name="Actual",
                 line=dict(color="#1E40AF", width=2.5),
                 marker=dict(size=8),
             ))
-            for _name, _res in _ml_results.items():
+            for _res in _cached:
+                _name = _res["name"]
+                _color = _colors.get(_name, "#64748B")
                 fig_pred.add_trace(go.Scatter(
-                    x=pred_data["Year"], y=_res["yhat"],
+                    x=_years, y=_res["yhat"],
                     mode="lines", name=f"{_name} fit",
-                    line=dict(dash="dash", color=_colors[_name], width=1.8),
+                    line=dict(dash="dash", color=_color, width=1.8),
                 ))
                 fig_pred.add_trace(go.Scatter(
-                    x=[_next], y=[_res["pred"]],
+                    x=[_next], y=[_res["pred_next"]],
                     mode="markers+text",
-                    text=[f"{_res['pred']:.1f}"],
+                    text=[f"{_res['pred_next']:.1f}"],
                     textposition="top center",
-                    marker=dict(size=11, symbol="triangle-up", color=_colors[_name]),
+                    marker=dict(size=11, symbol="triangle-up", color=_color),
                     name=f"{_name} → {_next}",
                 ))
             fig_pred.update_layout(
-                title=f"All 4 Models — {pred_target} Forecast to {_next}",
-                xaxis_title="Year", yaxis_title=pred_target,
-                template=plot_template, legend=dict(orientation="h", y=-0.25),
+                title=f"Model comparison — {pred_target} forecast to {_next} (n={len(_years)} years)",
+                xaxis_title="Year",
+                yaxis_title=pred_target,
+                template=plot_template,
+                legend=dict(orientation="h", y=-0.3),
             )
             st.plotly_chart(fig_pred, use_container_width=True)
-            # comparison table
-            _cmp_df = pd.DataFrame([
-                {"Model": k, f"Pred {_next}": f"{v['pred']:.2f}",
-                 "R²": f"{v['r2']:.3f}", "MAE": f"{v['mae']:.3f}",
-                 "RMSE": f"{v['rmse']:.3f}"}
-                for k, v in _ml_results.items()
-            ])
+
+            _cmp_df = comparison_df_from_records(list(_cached), _next)
+            st.markdown(f"**Ranked comparison (n={len(_years)} annual observations)**")
             st.dataframe(_cmp_df, use_container_width=True, hide_index=True)
-            if any(v["r2"] > 0.95 for k, v in _ml_results.items()
-                   if k != "Linear Regression"):
-                st.caption(
-                    "⚠️ Tree-based R² near 1.0 indicates overfitting on the small "
-                    "temporal dataset (n years). Linear Regression remains the most "
-                    "reliable model for trend characterisation."
+
+            if any(r["overfitting_warning"] for r in _cached):
+                st.warning(
+                    "Tree/boosting models show in-sample R² > 0.95 on n < 10 — overfitting likely. "
+                    "Trust CV metrics and Linear Regression for trend interpretation."
                 )
 
-        for _idx, (_name, _res) in enumerate(_ml_results.items(), start=1):
+            with st.expander("SHAP feature importance (tree-based models)"):
+                X = np.array(_years, dtype=float).reshape(-1, 1)
+                live_results = train_and_compare(
+                    np.array(_years, dtype=float), np.array(_y), _next
+                )
+                live_map = {r.name: r for r in live_results}
+                for _res in _cached:
+                    if _res["name"] not in TREE_MODEL_NAMES or _res["name"] not in live_map:
+                        continue
+                    shap_df = compute_shap_values(
+                        live_map[_res["name"]].model,
+                        _res["name"],
+                        X,
+                        feature_names=["Year"],
+                    )
+                    if shap_df is not None:
+                        st.markdown(f"**{_res['name']}** — mean |SHAP|")
+                        fig_shap = px.bar(
+                            shap_df,
+                            x="mean_abs_shap",
+                            y="feature",
+                            orientation="h",
+                            template=plot_template,
+                            title=f"SHAP — {_res['name']} (n={len(_years)})",
+                        )
+                        st.plotly_chart(fig_shap, use_container_width=True)
+
+        for _idx, _res in enumerate(_cached, start=1):
             with _tabs[_idx]:
+                _name = _res["name"]
+                _color = _colors.get(_name, "#64748B")
                 fig_single = go.Figure()
                 fig_single.add_trace(go.Bar(
-                    x=pred_data["Year"], y=_y,
+                    x=_years, y=_y,
                     name="Actual", marker_color="#1E40AF", opacity=0.8,
                 ))
                 fig_single.add_trace(go.Bar(
-                    x=pred_data["Year"], y=_res["yhat"],
-                    name="Predicted", marker_color=_colors[_name], opacity=0.8,
+                    x=_years, y=_res["yhat"],
+                    name="Predicted", marker_color=_color, opacity=0.8,
                 ))
                 fig_single.add_trace(go.Scatter(
-                    x=[_next], y=[_res["pred"]],
+                    x=[_next], y=[_res["pred_next"]],
                     mode="markers+text",
-                    text=[f"2025 forecast: {_res['pred']:.2f}"],
+                    text=[f"{_next} forecast: {_res['pred_next']:.2f}"],
                     textposition="top center",
-                    marker=dict(size=13, symbol="triangle-up", color=_colors[_name]),
+                    marker=dict(size=13, symbol="triangle-up", color=_color),
                     name=f"Forecast {_next}",
                 ))
                 fig_single.update_layout(
                     barmode="group",
-                    title=f"{_name} — Actual vs Predicted ({pred_target})",
-                    xaxis_title="Year", yaxis_title=pred_target,
+                    title=f"{_name} — Actual vs Predicted ({pred_target}, n={len(_years)})",
+                    xaxis_title="Year",
+                    yaxis_title=pred_target,
                     template=plot_template,
                 )
                 card_open()
                 st.plotly_chart(fig_single, use_container_width=True)
-                mc1, mc2, mc3, mc4 = st.columns(4)
-                mc1.metric("R²",          f"{_res['r2']:.3f}")
-                mc2.metric("MAE",         f"{_res['mae']:.3f}")
-                mc3.metric("RMSE",        f"{_res['rmse']:.3f}")
-                mc4.metric(f"Pred {_next}", f"{_res['pred']:.2f}")
+                mc1, mc2, mc3, mc4, mc5 = st.columns(5)
+                mc1.metric("CV R²", f"{_res['cv']['r2']:.3f}" if _res['cv']['r2'] == _res['cv']['r2'] else "—")
+                mc2.metric("CV MAE", f"{_res['cv']['mae']:.3f}" if _res['cv']['mae'] == _res['cv']['mae'] else "—")
+                mc3.metric("CV RMSE", f"{_res['cv']['rmse']:.3f}" if _res['cv']['rmse'] == _res['cv']['rmse'] else "—")
+                mc4.metric("CV MAPE %", f"{_res['cv']['mape']:.2f}" if _res['cv']['mape'] == _res['cv']['mape'] else "—")
+                mc5.metric(f"Pred {_next}", f"{_res['pred_next']:.2f}")
+                if _res["overfitting_warning"]:
+                    st.warning("Overfitting warning: in-sample R² > 0.95 on small n.")
                 card_close()
-
-        fig_pred = go.Figure()   # keep downstream export reference valid
     else:
-        fig_pred = go.Figure()
         st.info("Not enough yearly points for ML prediction (need ≥ 2 years).")
 
     section_header("⚖️ Compare Mode")
@@ -758,6 +861,8 @@ def main() -> None:
         "map": fig_map,
         "trend": fig_line,
         "regions": fig_bar,
+        "heatmap": fig_heatmap,
+        "yoy_delta": fig_yoy,
         "prediction": fig_pred,
     }
     export_keys = list(export_options.keys())

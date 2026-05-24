@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <radialGradient id="glow" cx="70%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#4dabf7" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#4dabf7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#glow)"/>
+  <path d="M0 650 Q360 600 720 640 T1440 620 L1440 900 L0 900 Z" fill="#4dabf7" opacity="0.03"/>
+  <path d="M0 720 Q480 680 960 710 T1440 690 L1440 900 L0 900 Z" fill="#51cf66" opacity="0.02"/>
+</svg>
