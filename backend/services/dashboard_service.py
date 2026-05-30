@@ -17,7 +17,11 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from analytics.ai_insights import generate_insights
+from analytics.gis_layers import basin_stats, pollution_hotspots
+from analytics.chart_narratives import chart_narratives
 from analytics.chat_assistant import chat as chat_assistant
+from analytics.i18n_content import LIMITATIONS_I18N, META_BANNERS, ML_DISCLAIMERS, WHY_NOT_DL, chart_labels, norm_lang
+from analytics.public_facts import public_facts
 from analytics.ml_engine import (
     comparison_df_from_records,
     prepare_yearly_series,
@@ -26,15 +30,11 @@ from analytics.ml_engine import (
 from analytics.shap_analysis import compute_shap_values
 from config.logging_config import get_logger
 from config.settings import (
-    DATASET_BANNER,
     DATA_PATH,
     GEOJSON_PATH,
-    LIMITATIONS,
-    ML_DISCLAIMER,
     MODEL_COLORS,
     REGION_NAME_MAP,
     TREE_MODEL_NAMES,
-    WHY_NOT_DEEP_LEARNING,
 )
 from data.loader import data_quality_summary, load_enriched
 from data.validator import DataValidator
@@ -85,6 +85,7 @@ class DashboardService:
         df: pd.DataFrame,
         sources: Optional[list[str]] = None,
         regions: Optional[list[str]] = None,
+        basins: Optional[list[str]] = None,
         years: Optional[list[int]] = None,
         pollutants: Optional[list[str]] = None,
     ) -> pd.DataFrame:
@@ -92,6 +93,8 @@ class DashboardService:
         out = df.copy()
         if sources and "data_source" in out.columns:
             out = out[out["data_source"].isin(sources)]
+        if basins and "Basin" in out.columns:
+            out = out[out["Basin"].isin(basins)]
         if regions:
             out = out[out["Region"].isin(regions)]
         if years:
@@ -105,24 +108,36 @@ class DashboardService:
         scoped = df.copy()
         if sources and "data_source" in scoped.columns:
             scoped = scoped[scoped["data_source"].isin(sources)]
+        basins = (
+            sorted(scoped["Basin"].dropna().unique().tolist())
+            if "Basin" in scoped.columns
+            else []
+        )
         return {
             "sources": sorted(df["data_source"].dropna().unique().tolist()) if "data_source" in df.columns else [],
             "regions": sorted(scoped["Region"].dropna().unique().tolist()),
+            "basins": basins,
             "years": [int(y) for y in sorted(scoped["Year"].dropna().unique())],
             "pollutants": sorted(scoped["Pollutant"].dropna().unique().tolist()),
             "source_labels": SOURCE_LABELS,
         }
 
-    def meta(self) -> dict:
+    def meta(self, lang: str = "en") -> dict:
         """Static dashboard metadata for frontend."""
+        lang = norm_lang(lang)
         return {
-            "banner": DATASET_BANNER,
-            "limitations": LIMITATIONS,
-            "ml_disclaimer": ML_DISCLAIMER,
-            "why_not_deep_learning": WHY_NOT_DEEP_LEARNING,
+            "banner": META_BANNERS[lang],
+            "limitations": LIMITATIONS_I18N[lang],
+            "ml_disclaimer": ML_DISCLAIMERS[lang],
+            "why_not_deep_learning": WHY_NOT_DL[lang],
             "dataset_path": str(DATA_PATH),
             "dataset_exists": DATA_PATH.exists(),
+            "total_records": int(len(self.load_dataset())),
+            "last_updated": pd.Timestamp.now().strftime("%Y-%m-%d"),
         }
+
+    def insights(self, df: pd.DataFrame, lang: str = "en") -> list[str]:
+        return generate_insights(df, lang=lang)
 
     def kpi(self, df: pd.DataFrame) -> dict:
         return {
@@ -134,6 +149,24 @@ class DashboardService:
 
     def data_quality(self, df: pd.DataFrame) -> dict:
         return data_quality_summary(df)
+
+    def region_stats(self, df: pd.DataFrame) -> list[dict]:
+        """Per-region metrics for map hover and tooltips."""
+        rows: list[dict] = []
+        for region, grp in df.groupby("Region"):
+            top_row = None
+            if len(grp) and grp["Ratio"].notna().any():
+                top_row = grp.loc[grp["Ratio"].idxmax()]
+            rows.append({
+                "region": str(region),
+                "mean_wqi": round(float(grp["WQI_Score"].mean()), 2),
+                "high_risk_pct": round(float((grp["Ratio"] > 2).mean() * 100), 1),
+                "records": int(len(grp)),
+                "top_pollutant": str(top_row["Pollutant"]) if top_row is not None else "—",
+                "max_ratio": round(float(grp["Ratio"].max()), 2),
+                "basin": str(grp["Basin"].mode().iloc[0]) if "Basin" in grp.columns and len(grp["Basin"].dropna()) else None,
+            })
+        return rows
 
     def risk_alerts(self, df: pd.DataFrame) -> dict:
         high = df[df["Ratio"] > 2]
@@ -157,11 +190,39 @@ class DashboardService:
             "top_regions": top.head(8).to_dict(orient="records"),
         }
 
-    def insights(self, df: pd.DataFrame) -> list[str]:
-        return generate_insights(df)
-
-    def chat(self, df: pd.DataFrame, message: str, lang: str = "en") -> dict:
-        return chat_assistant(message, df, lang=lang)
+    def chat(
+        self,
+        df: pd.DataFrame,
+        message: str,
+        lang: str = "en",
+        *,
+        sources: Optional[list[str]] = None,
+        regions: Optional[list[str]] = None,
+        basins: Optional[list[str]] = None,
+        years: Optional[list[int]] = None,
+        pollutants: Optional[list[str]] = None,
+    ) -> dict:
+        filters = {
+            "sources": sources,
+            "regions": regions,
+            "basins": basins,
+            "years": years,
+            "pollutants": pollutants,
+        }
+        hotspots = pollution_hotspots(df) if not df.empty else []
+        basins_data = basin_stats(df) if not df.empty else []
+        risk = self.risk_alerts(df) if not df.empty else {}
+        forecast = self.ml_forecast(df) if not df.empty else {"ok": False, "message": "empty selection"}
+        return chat_assistant(
+            message,
+            df,
+            lang=lang,
+            filters=filters,
+            hotspots=hotspots,
+            basin_stats=basins_data,
+            forecast=forecast,
+            risk_alerts=risk,
+        )
 
     def compare(
         self,
@@ -233,8 +294,9 @@ class DashboardService:
             "any_overfitting": any(r["overfitting_warning"] for r in records),
         }
 
-    def charts(self, df: pd.DataFrame, template: str = "plotly_white") -> dict[str, Any]:
+    def charts(self, df: pd.DataFrame, template: str = "plotly_white", lang: str = "en") -> dict[str, Any]:
         """Return Plotly figure JSON for all dashboard charts."""
+        lbl = chart_labels(lang)
         regional_map = (
             df.groupby("Region", as_index=False)["WQI_Score"].mean().rename(columns={"WQI_Score": "Mean_WQI"})
         )
@@ -251,39 +313,49 @@ class DashboardService:
                 regional_map["Mean_WQI"].max() * 1.05,
             ),
             mapbox_style="carto-positron",
-            zoom=3.8,
-            center={"lat": 48.0, "lon": 66.0},
-            opacity=0.75,
+            zoom=4.35,
+            center={"lat": 48.2, "lon": 67.0},
+            opacity=0.88,
             hover_name="Region",
-            title=f"Average WQI by Region (n={len(df):,})",
-            labels={"Mean_WQI": "WQI Score"},
+            labels={"Mean_WQI": lbl["map_hover"]},
         )
-        fig_map.update_layout(margin={"l": 0, "r": 0, "t": 50, "b": 0}, template=template)
+        fig_map.update_layout(
+            margin={"l": 0, "r": 0, "t": 0, "b": 0},
+            template=template,
+            mapbox=dict(
+                zoom=4.55,
+                center=dict(lat=48.2, lon=67.0),
+                bearing=0,
+                pitch=0,
+            ),
+        )
 
         trend = df.groupby("Year", as_index=False)["WQI_Score"].mean()
-        fig_line = px.line(
-            trend, x="Year", y="WQI_Score", markers=True,
-            title=f"Average WQI Over Time (n={len(df):,})", template=template,
-        )
-        fig_line.update_layout(xaxis_title="Year", yaxis_title="WQI Score")
+        fig_line = px.line(trend, x="Year", y="WQI_Score", markers=True, template=template)
+        fig_line.update_layout(xaxis_title=lbl["year"], yaxis_title=lbl["wqi"])
 
         region_bar = df.groupby("Region", as_index=False)["WQI_Score"].mean().sort_values("WQI_Score", ascending=False)
         fig_bar = px.bar(
             region_bar, x="Region", y="WQI_Score", color="WQI_Score",
-            color_continuous_scale="Blues",
-            title=f"Average WQI by Region (n={len(df):,})", template=template,
+            color_continuous_scale="Blues", template=template,
         )
+        fig_bar.update_layout(xaxis_title=lbl["region"], yaxis_title=lbl["wqi"])
 
-        fig_heatmap = build_pollutant_region_heatmap(df, template=template, n_records=len(df))
-        fig_yoy = build_yoy_wqi_delta(df, template=template)
+        fig_heatmap = build_pollutant_region_heatmap(df, template=template, n_records=len(df), labels=lbl)
+        fig_yoy = build_yoy_wqi_delta(df, template=template, labels=lbl)
 
-        return {
-            "map": json.loads(fig_map.to_json()),
-            "trend": json.loads(fig_line.to_json()),
-            "regions": json.loads(fig_bar.to_json()),
-            "heatmap": json.loads(fig_heatmap.to_json()),
-            "yoy_delta": json.loads(fig_yoy.to_json()),
+        def _chart_json(fig: go.Figure) -> dict | None:
+            payload = json.loads(fig.to_json())
+            return payload if payload.get("data") else None
+
+        out: dict[str, Any] = {
+            "map": _chart_json(fig_map),
+            "trend": _chart_json(fig_line),
+            "regions": _chart_json(fig_bar),
+            "heatmap": _chart_json(fig_heatmap),
+            "yoy_delta": _chart_json(fig_yoy),
         }
+        return {k: v for k, v in out.items() if v is not None}
 
     def export_csv(self, df: pd.DataFrame) -> str:
         buf = StringIO()

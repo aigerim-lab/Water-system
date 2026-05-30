@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import pandas as pd
 
-from analytics.ai_insights import DISCLAIMER, generate_insights
+from analytics.ai_insights import generate_insights
+from analytics.i18n_content import INSIGHT_DISCLAIMERS
 
 
 def test_empty_dataframe_returns_disclaimer():
-    insights = generate_insights(pd.DataFrame())
+    insights = generate_insights(pd.DataFrame(), lang="en")
     assert len(insights) >= 1
-    assert DISCLAIMER in insights[-1]
+    assert INSIGHT_DISCLAIMERS["en"] in insights[-1]
 
 
 def test_generates_region_insight():
@@ -24,6 +25,11 @@ def test_generates_region_insight():
             "data_source": ["reconstructed"] * 3,
         }
     )
-    insights = generate_insights(df)
+    insights = generate_insights(df, lang="en")
     assert any("Almaty" in i for i in insights)
-    assert DISCLAIMER in insights[-1]
+    assert INSIGHT_DISCLAIMERS["en"] in insights[-1]
+
+
+def test_insights_ru():
+    insights = generate_insights(pd.DataFrame(), lang="ru")
+    assert "фильтр" in insights[0].lower() or "запис" in insights[0].lower()

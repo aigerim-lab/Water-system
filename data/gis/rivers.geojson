@@ -1,0 +1,159 @@
+{
+  "type": "FeatureCollection",
+  "name": "kazakhstan_major_rivers",
+  "crs": { "type": "name", "properties": { "name": "EPSG:4326" } },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "irtysh",
+        "name": "Irtysh",
+        "basin": "Ertis",
+        "length_km_kz": 1700
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [84.52, 47.48], [83.10, 48.60], [82.61, 49.97], [81.40, 51.20],
+          [79.80, 52.80], [78.20, 54.10], [76.90, 55.00], [75.80, 55.80], [74.50, 56.20]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ili",
+        "name": "Ili",
+        "basin": "Balkash-Alakol",
+        "length_km_kz": 450
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [80.40, 43.20], [79.20, 44.10], [77.50, 45.20], [75.80, 46.00], [74.50, 46.40]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "syrdarya",
+        "name": "Syr Darya",
+        "basin": "Aralo-Syrdarya",
+        "length_km_kz": 1400
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [68.20, 41.10], [67.50, 42.50], [66.20, 43.80], [65.52, 44.85],
+          [64.00, 45.60], [62.00, 46.20], [60.50, 46.50]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ural",
+        "name": "Ural",
+        "basin": "Zhaiyk-Kaspian",
+        "length_km_kz": 900
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [55.20, 51.60], [54.00, 51.00], [52.50, 50.20], [51.88, 47.12], [50.80, 46.50]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ishim",
+        "name": "Ishim",
+        "basin": "Esil",
+        "length_km_kz": 1400
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [71.50, 54.80], [71.30, 53.50], [71.40, 51.20], [71.00, 49.80], [70.20, 48.20], [69.50, 47.00]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "tobol",
+        "name": "Tobol",
+        "basin": "Tobyl-Torgay",
+        "length_km_kz": 800
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [63.62, 53.21], [65.00, 52.50], [66.80, 51.80], [68.50, 51.00], [69.80, 50.20]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "chu",
+        "name": "Chu",
+        "basin": "Shu-Talas",
+        "length_km_kz": 400
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [75.80, 42.80], [74.50, 43.20], [73.76, 43.60], [72.50, 44.20], [71.80, 44.80]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "shu",
+        "name": "Shu",
+        "basin": "Shu-Talas",
+        "length_km_kz": 700
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [78.20, 42.50], [76.50, 42.90], [75.00, 43.30], [73.76, 43.60], [72.00, 44.00]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "talas",
+        "name": "Talas",
+        "basin": "Shu-Talas",
+        "length_km_kz": 350
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [71.50, 42.80], [71.20, 43.40], [70.80, 44.20], [70.50, 44.80]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "nura",
+        "name": "Nura",
+        "basin": "Nura-Sarysu",
+        "length_km_kz": 650
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [73.10, 49.80], [72.50, 50.50], [71.80, 51.20], [71.00, 51.80], [70.00, 52.20]
+        ]
+      }
+    }
+  ]
+}

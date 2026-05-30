@@ -9,28 +9,20 @@ function renderMarkdownLight(text) {
     .replace(/_(.*?)_/g, '<em>$1</em>')
 }
 
-export function ChatPanel({ filters, open, onToggle }) {
+export function ChatPanel({ filters, open, onToggle, experience = false }) {
   const { t, lang } = useLanguage()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [suggestions, setSuggestions] = useState([])
+  const [modeLabel, setModeLabel] = useState('')
   const bottomRef = useRef(null)
 
   useEffect(() => {
-    if (open && messages.length === 0) {
-      setMessages([{
-        role: 'assistant',
-        text: t('chat.welcome'),
-        mode: 'rules',
-      }])
-      setSuggestions([
-        t('chat.suggest1'),
-        t('chat.suggest2'),
-        t('chat.suggest3'),
-      ])
-    }
-  }, [open, messages.length, t])
+    if (!open) return
+    setMessages([{ role: 'assistant', text: t('analyst.welcome') }])
+    setSuggestions([])
+  }, [lang, open, t])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -44,10 +36,15 @@ export function ChatPanel({ filters, open, onToggle }) {
     setLoading(true)
     try {
       const res = await api.chat({ ...filters, message: msg, lang })
-      setMessages((m) => [...m, { role: 'assistant', text: res.reply, mode: res.mode }])
+      setMessages((m) => [...m, { role: 'assistant', text: res.reply }])
       if (res.suggestions?.length) setSuggestions(res.suggestions)
+      if (res.source === 'ollama' && res.model) {
+        setModeLabel(`${t('analyst.poweredByOllama')} · ${res.model}`)
+      } else if (res.source === 'fallback') {
+        setModeLabel(t('analyst.fallbackMode'))
+      }
     } catch (e) {
-      setMessages((m) => [...m, { role: 'assistant', text: `${t('chat.error')} ${e.message}`, mode: 'error' }])
+      setMessages((m) => [...m, { role: 'assistant', text: `${t('analyst.error')} ${e.message}` }])
     } finally {
       setLoading(false)
     }
@@ -55,7 +52,7 @@ export function ChatPanel({ filters, open, onToggle }) {
 
   if (!open) {
     return (
-      <button type="button" className="chat-fab" onClick={onToggle} aria-label={t('chat.open')}>
+      <button type="button" className={`chat-fab ${experience ? 'chat-fab--experience' : ''}`} onClick={onToggle} aria-label={t('analyst.open')}>
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
           <path d="M12 3a9 9 0 00-9 9c0 1.5.4 2.9 1 4.1L3 21l4.9-1.1A9 9 0 1012 3z" stroke="currentColor" strokeWidth="1.5"/>
         </svg>
@@ -64,31 +61,30 @@ export function ChatPanel({ filters, open, onToggle }) {
   }
 
   return (
-    <div className="chat-panel">
-      <header className="chat-head">
+    <aside className={`chat-dock ${experience ? 'chat-dock--experience' : ''}`} aria-label={t('analyst.title')}>
+      <header className="chat-dock__head">
         <div>
-          <div className="chat-title">{t('chat.title')}</div>
-          <div className="chat-sub">{t('chat.subtitle')}</div>
+          <div className="chat-dock__title">{t('analyst.title')}</div>
+          <div className="chat-dock__sub">
+            {modeLabel || t('analyst.subtitle')}
+          </div>
         </div>
-        <button type="button" className="chat-close" onClick={onToggle} aria-label={t('chat.close')}>×</button>
+        <button type="button" className="icon-btn" onClick={onToggle} aria-label={t('analyst.close')}>×</button>
       </header>
 
       <div className="chat-messages">
         {messages.map((m, i) => (
           <div key={i} className={`chat-bubble chat-bubble--${m.role}`}>
-            {m.role === 'assistant' && m.mode && m.mode !== 'error' && (
-              <span className="chat-mode">{m.mode === 'ollama' ? 'LLM' : t('chat.modeRules')}</span>
+            {m.role === 'assistant' ? (
+              <div dangerouslySetInnerHTML={{ __html: renderMarkdownLight(m.text) }} />
+            ) : (
+              m.text
             )}
-            <div
-              dangerouslySetInnerHTML={{
-                __html: m.role === 'assistant' ? renderMarkdownLight(m.text) : m.text,
-              }}
-            />
           </div>
         ))}
         {loading && (
           <div className="chat-bubble chat-bubble--assistant chat-bubble--typing">
-            {t('chat.thinking')}
+            {t('analyst.thinking')}
           </div>
         )}
         <div ref={bottomRef} />
@@ -115,13 +111,13 @@ export function ChatPanel({ filters, open, onToggle }) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder={t('chat.placeholder')}
+          placeholder={t('analyst.placeholder')}
           maxLength={500}
         />
         <button type="submit" className="chat-send" disabled={loading || !input.trim()}>
-          {t('chat.send')}
+          {t('analyst.send')}
         </button>
       </form>
-    </div>
+    </aside>
   )
 }

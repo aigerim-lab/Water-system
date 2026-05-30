@@ -13,7 +13,7 @@ const LanguageContext = createContext(null)
 function readStoredLang() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored === 'en' || stored === 'ru') return stored
+    if (stored === 'en' || stored === 'ru' || stored === 'kk') return stored
   } catch {
     /* ignore */
   }
@@ -24,7 +24,7 @@ export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(readStoredLang)
 
   const setLang = useCallback((code) => {
-    if (code !== 'en' && code !== 'ru') return
+    if (code !== 'en' && code !== 'ru' && code !== 'kk') return
     setLangState(code)
     try {
       localStorage.setItem(STORAGE_KEY, code)

@@ -1,0 +1,106 @@
+/* Period compare & ML forecast tables (active journey sections) */
+
+.compare-panel {
+  padding: 1.75rem;
+}
+
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.25rem;
+}
+
+.compare-slot label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.compare-slot select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-family: var(--font-ui);
+  margin-bottom: 0.5rem;
+}
+
+.compare-vs {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--text-faint);
+  padding-bottom: 0.5rem;
+}
+
+.delta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.delta-card {
+  padding: 1rem;
+  text-align: center;
+  background: var(--accent-dim);
+  border-radius: 14px;
+}
+
+.delta-card span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin-bottom: 0.35rem;
+}
+
+.delta-card strong {
+  font-family: var(--font-data);
+  font-size: 1.35rem;
+}
+
+.delta-card strong.up { color: var(--crit); }
+.delta-card strong.down { color: var(--ok); }
+
+.forecast-table-wrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.forecast-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.forecast-table th,
+.forecast-table td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.forecast-table th {
+  color: var(--text-faint);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+}
+
+.forecast-table tr.row-best td {
+  color: var(--accent-bright);
+}
+
+@media (max-width: 720px) {
+  .compare-row { grid-template-columns: 1fr; }
+  .compare-vs { display: none; }
+  .delta-grid { grid-template-columns: 1fr; }
+}

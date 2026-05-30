@@ -1,0 +1,64 @@
+import React from 'react'
+import { useLanguage } from '../../i18n/LanguageContext.jsx'
+import { AnimatedNumber } from '../ui/AnimatedNumber.jsx'
+
+function renderMd(text) {
+  if (text == null) return ''
+  return String(text).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+}
+
+export function NationalStatusPanel({ kpi, facts, nationalStory }) {
+  const { t } = useLanguage()
+  if (!kpi) return null
+
+  return (
+    <aside className="nsp" aria-label={t('national.title')}>
+      <p className="nsp__eyebrow">{t('national.eyebrow')}</p>
+      <h2 className="nsp__title">{t('national.title')}</h2>
+
+      <div className="nsp__hero-metric">
+        <span className="nsp__hero-label">{t('national.avgWqi')}</span>
+        <span className="nsp__hero-value">
+          <AnimatedNumber value={kpi.mean_wqi} decimals={1} />
+        </span>
+        <span className="nsp__hero-unit">{t('map.legendTitle')}</span>
+      </div>
+
+      <ul className="nsp__facts">
+        {facts?.most_polluted_region && (
+          <li className="nsp__fact nsp__fact--stress">
+            <span>{t('national.mostPolluted')}</span>
+            <strong>{facts.most_polluted_region}</strong>
+          </li>
+        )}
+        {facts?.cleanest_region && (
+          <li className="nsp__fact nsp__fact--calm">
+            <span>{t('national.cleanest')}</span>
+            <strong>{facts.cleanest_region}</strong>
+          </li>
+        )}
+        {facts?.dangerous_pollutant && (
+          <li className="nsp__fact nsp__fact--alert">
+            <span>{t('national.topPollutant')}</span>
+            <strong>{facts.dangerous_pollutant}</strong>
+          </li>
+        )}
+        <li className="nsp__fact">
+          <span>{t('national.highRisk')}</span>
+          <strong><AnimatedNumber value={kpi.high_risk_share} decimals={1} />%</strong>
+        </li>
+        <li className="nsp__fact">
+          <span>{t('national.records')}</span>
+          <strong><AnimatedNumber value={kpi.records} decimals={0} /></strong>
+        </li>
+      </ul>
+
+      {nationalStory && (
+        <p
+          className="nsp__story"
+          dangerouslySetInnerHTML={{ __html: renderMd(nationalStory) }}
+        />
+      )}
+    </aside>
+  )
+}

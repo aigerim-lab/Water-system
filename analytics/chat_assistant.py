@@ -1,8 +1,8 @@
 """
-Context-aware water quality chat assistant.
+Context-aware water quality chat assistant powered by Ollama.
 
-Default mode: rule-based answers from the filtered dataset (no external API).
-Optional mode: Ollama local LLM when OLLAMA_BASE_URL is set.
+Primary mode: Ollama local LLM with structured AquaMonitor analytics context.
+Fallback mode: rule-based answers when Ollama is unavailable.
 
 Metrics align with the dashboard: chemical pollutants for pollution/risk/trend;
 high-risk region = most records with ratio > 2 (not highest mean ratio alone).
@@ -10,16 +10,15 @@ high-risk region = most records with ratio > 2 (not highest mean ratio alone).
 
 from __future__ import annotations
 
-import json
-import os
 import re
-import urllib.error
-import urllib.request
 from typing import Any
 
 import pandas as pd
 
 from analytics.ai_insights import generate_insights
+from analytics.i18n_content import INSIGHT_DISCLAIMERS
+from analytics.chat_nlu import extract_regions, extract_year
+from analytics.ollama_client import generate as ollama_generate, is_available as ollama_available
 
 NON_CHEMICAL_POLLUTANTS = frozenset({"Water_Level_cm", "Mixed_Chemicals"})
 
@@ -34,26 +33,50 @@ CHAT_DISCLAIMER_RU = (
     "Не нормативная рекомендация."
 )
 
+CHAT_DISCLAIMER_KK = (
+    "Жауаптар ағымдағы сүзгілерге негізделген. "
+    "Ластану көрсеткіштері — тек химиялық индикаторлар (су деңгейі емес). "
+    "Нормативтік ұсыныс емес."
+)
+
 SUGGESTIONS_EN = [
-    "What is the mean WQI for chemical pollutants?",
-    "Which region has the most high-risk records?",
-    "Is chemical water quality improving or deteriorating?",
-    "Explain the high-risk share",
+    "Which region faces the highest pollution pressure?",
+    "Is water quality improving or getting worse?",
+    "What is the main pollutant in the current view?",
+    "Which areas need monitoring priority?",
 ]
 SUGGESTIONS_RU = [
-    "Какой средний WQI по химическим показателям?",
-    "В каком регионе больше всего записей высокого риска?",
-    "Улучшается или ухудшается качество по химии?",
-    "Объясни долю высокого риска",
+    "Какой регион испытывает наибольшее давление загрязнения?",
+    "Улучшается или ухудшается качество воды?",
+    "Какой загрязнитель доминирует в текущей выборке?",
+    "Каким районам нужен приоритетный мониторинг?",
 ]
+SUGGESTIONS_KK = [
+    "Қай ауданда ластану қысымы ең жоғары?",
+    "Су сапасы жақсарып жатыр ма, әлде нашарлап жатыр ма?",
+    "Ағымдағы көруде басым ластаушы қандай?",
+    "Қай аудандарға бақылау басымдығы керек?",
+]
+
+
+def _pick(lang: str, en: str, ru: str, kk: str) -> str:
+    if lang == "kk":
+        return kk
+    if lang == "ru":
+        return ru
+    return en
 
 
 def _disclaimer(lang: str) -> str:
-    return CHAT_DISCLAIMER_RU if lang == "ru" else CHAT_DISCLAIMER_EN
+    return _pick(lang, CHAT_DISCLAIMER_EN, CHAT_DISCLAIMER_RU, CHAT_DISCLAIMER_KK)
 
 
 def _suggestions(lang: str) -> list[str]:
-    return list(SUGGESTIONS_RU if lang == "ru" else SUGGESTIONS_EN)
+    if lang == "kk":
+        return list(SUGGESTIONS_KK)
+    if lang == "ru":
+        return list(SUGGESTIONS_RU)
+    return list(SUGGESTIONS_EN)
 
 
 def _chemical_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -125,19 +148,84 @@ def _trend_block(sub: pd.DataFrame) -> dict[str, Any]:
     }
 
 
-def build_context(df: pd.DataFrame) -> dict[str, Any]:
-    """Summarise filtered data — pollution metrics on chemical subset."""
+def _summarize_forecast(forecast: dict[str, Any] | None) -> dict[str, Any]:
+    if not forecast or not forecast.get("ok"):
+        return {"available": False, "reason": forecast.get("message") if forecast else "not computed"}
+    models = forecast.get("models") or []
+    linear = next((m for m in models if m.get("name") == "Linear Regression"), None)
+    best = linear or (min(models, key=lambda m: m.get("cv", {}).get("mae", 1e9)) if models else None)
+    return {
+        "available": True,
+        "target": forecast.get("target"),
+        "years_observed": forecast.get("years"),
+        "forecast_year": forecast.get("forecast_year"),
+        "recommended_model": best.get("name") if best else None,
+        "predicted_next": best.get("pred_next") if best else None,
+        "any_overfitting": forecast.get("any_overfitting"),
+    }
+
+
+def _summarize_hotspots(hotspots: list[dict[str, Any]] | None, limit: int = 5) -> list[dict[str, Any]]:
+    if not hotspots:
+        return []
+    ranked = sorted(hotspots, key=lambda h: h.get("intensity", 0), reverse=True)
+    return [
+        {
+            "station": h.get("name"),
+            "basin": h.get("basin"),
+            "intensity": h.get("intensity"),
+            "high_risk_pct": h.get("high_risk_pct"),
+            "status": h.get("status"),
+        }
+        for h in ranked[:limit]
+    ]
+
+
+def _summarize_basins(basin_stats: list[dict[str, Any]] | None, limit: int = 8) -> list[dict[str, Any]]:
+    if not basin_stats:
+        return []
+    return [
+        {
+            "basin": b.get("id"),
+            "mean_wqi": b.get("mean_wqi"),
+            "max_ratio": b.get("max_ratio"),
+            "high_risk_pct": b.get("high_risk_pct"),
+            "top_pollutant": b.get("top_pollutant"),
+            "top_region": b.get("top_region"),
+            "trend_wqi_delta": b.get("trend_wqi_delta"),
+        }
+        for b in basin_stats[:limit]
+    ]
+
+
+def build_context(
+    df: pd.DataFrame,
+    *,
+    filters: dict[str, Any] | None = None,
+    hotspots: list[dict[str, Any]] | None = None,
+    basin_stats: list[dict[str, Any]] | None = None,
+    forecast: dict[str, Any] | None = None,
+    risk_alerts: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Summarise filtered data and dashboard analytics for the LLM."""
+    ctx: dict[str, Any] = {
+        "platform": "AquaMonitor Kazakhstan Water Quality Intelligence",
+        "active_filters": filters or {},
+    }
+
     if df.empty:
-        return {"empty": True, "records": 0}
+        ctx.update({"empty": True, "records": 0})
+        ctx["forecast"] = _summarize_forecast(forecast)
+        return ctx
 
     chem = _chemical_df(df)
-    ctx: dict[str, Any] = {
+    ctx.update({
         "empty": False,
         "records_total": int(len(df)),
         "records_chemical": int(len(chem)),
         "observed_pct": round(float((df["data_source"] == "observed").mean() * 100), 1)
         if "data_source" in df.columns else None,
-    }
+    })
 
     # Primary pollution stats = chemical only (consistent with heatmap / hazard logic)
     poll = _stats_block(chem if not chem.empty else df)
@@ -167,9 +255,39 @@ def build_context(df: pd.DataFrame) -> dict[str, Any]:
             src = high["data_source"].value_counts(normalize=True).mul(100).round(1)
             ctx["high_risk_source_mix"] = src.to_dict()
 
+    if "Region" in analysis.columns:
+        stats = {}
+        for reg, grp in analysis.groupby("Region"):
+            stats[str(reg)] = {
+                "mean_wqi": round(float(grp["WQI_Score"].mean()), 2),
+                "mean_ratio": round(float(grp["Ratio"].mean()), 2),
+                "high_risk": int((grp["Ratio"] > 2).sum()),
+                "n": int(len(grp)),
+            }
+        ctx["region_stats"] = stats
+        ctx["available_regions"] = list(stats.keys())
+
     if "data_source" in df.columns:
         shares = (df["data_source"].value_counts(normalize=True) * 100).round(1)
         ctx["source_mix"] = shares.to_dict()
+
+    if "Basin" in df.columns:
+        ctx["available_basins"] = sorted(df["Basin"].dropna().unique().tolist())
+    if "Year" in df.columns:
+        ctx["selected_years"] = sorted(int(y) for y in df["Year"].dropna().unique())
+    if "Pollutant" in df.columns:
+        ctx["selected_pollutants"] = sorted(df["Pollutant"].dropna().unique().tolist())
+
+    ctx["basin_analytics"] = _summarize_basins(basin_stats)
+    ctx["pollution_hotspots"] = _summarize_hotspots(hotspots)
+    ctx["forecast"] = _summarize_forecast(forecast)
+
+    if risk_alerts:
+        ctx["risk_summary"] = {
+            "high_risk_pct": risk_alerts.get("high_risk_pct"),
+            "moderate_risk_pct": risk_alerts.get("moderate_risk_pct"),
+            "top_regions": (risk_alerts.get("top_regions") or [])[:5],
+        }
 
     return ctx
 
@@ -181,28 +299,42 @@ def _match_any(text: str, patterns: list[str]) -> bool:
 def _detect_intent(message: str) -> str:
     """Priority-ordered intent — avoids 'risk' swallowing trend/region questions."""
     m = message.lower()
-    if _match_any(m, [r"\btrend\b", r"тренд", r"динамик", r"улучш", r"ухудш", r"improv", r"deterior", r"год к году"]):
+    if _match_any(m, [r"what is wqi", r"explain wqi", r"что такое wqi", r"wqi деген", r"wqi нет", r"wqi деген не"]):
+        return "explain_wqi"
+    if _match_any(m, [r"compare", r"сравни", r"салыстыр", r"vs\b", r"versus"]):
+        return "compare_regions"
+    if _match_any(m, [r"why.*risk", r"почему.*риск", r"неге.*тәуекел", r"why is"]):
+        return "why_region"
+    if _match_any(m, [r"cleanest", r"самый чист", r"ең таза", r"best region", r"лучший регион"]):
+        return "cleanest"
+    if _match_any(m, [r"\btrend\b", r"тренд", r"динамик", r"улучш", r"ухудш", r"improv", r"deterior", r"год к году",
+                      r"жақсар", r"нашарла", r"динамика"]):
         return "trend"
     if _match_any(m, [
         r"which region.*risk", r"highest risk region", r"most high.risk", r"riskiest region",
         r"какой регион.*риск", r"самый рискован", r"больше всего.*риск", r"где больше.*риск",
+        r"қай аудан.*тәуекел", r"жоғары тәуекел.*аудан", r"ауданда.*жоғары тәуекел",
     ]):
         return "risk_region"
-    if _match_any(m, [r"priorit", r"actionable", r"комбинац", r"рекоменд", r"summarize.*3", r"три приоритет"]):
+    if _match_any(m, [r"priorit", r"actionable", r"комбинац", r"рекоменд", r"summarize.*3", r"три приоритет",
+                      r"басымдық", r"ұсыныс", r"үш приоритет"]):
         return "priorities"
-    if _match_any(m, [r"\bwqi\b", r"индекс", r"качеств"]):
+    if _match_any(m, [r"\bwqi\b", r"индекс", r"качеств", r"сапа", r"индекс"]):
         return "wqi"
-    if _match_any(m, [r"\brisk\b", r"риск", r"опасн", r"threshold", r"порог", r"high.risk share", r"дол[яи]"]):
+    if _match_any(m, [r"\brisk\b", r"риск", r"опасн", r"threshold", r"порог", r"high.risk share", r"дол[яи]",
+                      r"тәуекел", r"қауіп", r"порог"]):
         return "risk"
-    if _match_any(m, [r"\bregion\b", r"регион", r"област"]):
+    if _match_any(m, [r"\bregion\b", r"регион", r"област", r"аудан", r"аймақ"]):
         return "region"
-    if _match_any(m, [r"pollut", r"загрязн", r"nitrat", r"copper", r"нитрат", r"медь"]):
+    if _match_any(m, [r"pollut", r"загрязн", r"nitrat", r"copper", r"нитрат", r"медь", r"ластауш"]):
         return "pollutant"
-    if _match_any(m, [r"\bml\b", r"forecast", r"прогноз", r"model", r"модел"]):
+    if _match_any(m, [r"\bml\b", r"forecast", r"прогноз", r"model", r"модел", r"болжам"]):
         return "ml"
-    if _match_any(m, [r"\bdata\b", r"dataset", r"источник", r"данн", r"source", r"observed", r"reconstructed"]):
+    if _match_any(m, [r"\bdata\b", r"dataset", r"источник", r"данн", r"source", r"observed", r"reconstructed",
+                      r"дерек", r"көз", r"дереккөз"]):
         return "data"
-    if _match_any(m, [r"\bhelp\b", r"что ты", r"что умеешь", r"помощь", r"help me"]):
+    if _match_any(m, [r"\bhelp\b", r"что ты", r"что умеешь", r"помощь", r"help me",
+                      r"көмек", r"не білесің", r"не айта"]):
         return "help"
     return "general"
 
@@ -210,34 +342,171 @@ def _detect_intent(message: str) -> str:
 def _subset_note(ctx: dict[str, Any], lang: str) -> str:
     if not ctx.get("using_chemical_subset"):
         return ""
-    n_chem = ctx.get("records_chemical", 0)
-    n_total = ctx.get("records_total", 0)
     if lang == "ru":
-        return f" (метрики загрязнения: {n_chem:,} хим. записей из {n_total:,})"
-    return f" (pollution metrics: {n_chem:,} chemical records of {n_total:,})"
+        return " Анализ основан на химических показателях в текущей выборке."
+    if lang == "kk":
+        return " Талдау ағымдағы таңдаудағы химиялық көрсеткіштерге негізделген."
+    return " Analysis uses chemical indicators in your current selection."
+
+
+def _wqi_label(wqi: float | None, lang: str) -> str:
+    if wqi is None:
+        return "—"
+    if lang == "ru":
+        if wqi < 50:
+            return "ниже нормы (хорошая ситуация)"
+        if wqi <= 100:
+            return "умеренное давление на экосистему"
+        return "значительное загрязнение относительно ПДК"
+    if lang == "kk":
+        if wqi < 50:
+            return "нормадан төмен (жақсы жағдай)"
+        if wqi <= 100:
+            return "орташа экологиялық қысым"
+        return "ШРК-ға қатысты айтарлықтай ластану"
+    if wqi < 50:
+        return "below the regulatory threshold (favourable)"
+    if wqi <= 100:
+        return "moderate environmental pressure"
+    return "significantly worse than the regulatory limit"
+
+
+def _trend_phrase(direction: str | None, lang: str) -> str:
+    mapping_en = {
+        "deteriorating": "water quality is worsening over the selected period",
+        "improving": "water quality is improving over the selected period",
+        "stable": "water quality is broadly stable",
+    }
+    mapping_ru = {
+        "deteriorating": "качество воды ухудшается в выбранном периоде",
+        "improving": "качество воды улучшается в выбранном периоде",
+        "stable": "качество воды в целом стабильно",
+    }
+    mapping_kk = {
+        "deteriorating": "таңдалған кезеңде су сапасы нашарлап барады",
+        "improving": "таңдалған кезеңде су сапасы жақсарып барады",
+        "stable": "таңдалған кезеңде су сапасы тұрақты",
+    }
+    if lang == "ru":
+        return mapping_ru.get(direction or "", "динамика неоднозначна")
+    if lang == "kk":
+        return mapping_kk.get(direction or "", "динамика анық емес")
+    return mapping_en.get(direction or "", "the trend is unclear")
+
+
+def _national_wqi(ctx: dict[str, Any]) -> float | None:
+    wqi = ctx.get("mean_wqi")
+    return float(wqi) if wqi is not None else None
 
 
 def _rule_reply(message: str, ctx: dict[str, Any], lang: str) -> str | None:
     if ctx.get("empty"):
-        return (
-            "Нет данных для текущих фильтров. Расширьте выборку."
-            if lang == "ru"
-            else "No data for the current filters. Try widening your selection."
+        return _pick(
+            lang,
+            "No data for the current filters. Try widening your selection.",
+            "Нет данных для текущих фильтров. Расширьте выборку.",
+            "Ағымдағы сүзгілер үшін деректер жоқ. Таңдауды кеңейтіңіз.",
         )
 
     intent = _detect_intent(message)
     n = ctx.get("records_chemical") or ctx["records"]
     note = _subset_note(ctx, lang)
-    ru = lang == "ru"
+    regions_in_msg = extract_regions(message, ctx.get("available_regions", []))
+    year_q = extract_year(message)
+    rs = ctx.get("region_stats", {})
+
+    if intent == "explain_wqi":
+        return _pick(
+            lang,
+            "**WQI** = (Concentration / MPC) × 50. Below 50 = cleaner than MPC; 50 = at limit; above 100 = >2× MPC (high risk). Lower is better.",
+            "**WQI** = (Концентрация / ПДК) × 50. Ниже 50 — чище ПДК; 50 — на границе; выше 100 — >2× ПДК (высокий риск). Меньше = лучше.",
+            "**WQI** = (Концентрация / ШРК) × 50. 50-ден төмен — таза; 50 — шекте; 100-ден жоғары — жоғары тәуекел. Төмен = жақсы.",
+        )
+
+    if intent == "compare_regions" and len(regions_in_msg) >= 2:
+        a, b = regions_in_msg[0], regions_in_msg[1]
+        sa, sb = rs.get(a, {}), rs.get(b, {})
+        if sa and sb:
+            wqi_a, wqi_b = sa.get("mean_wqi"), sb.get("mean_wqi")
+            return _pick(
+                lang,
+                f"**{a}** shows {_wqi_label(wqi_a, lang)}, while **{b}** shows {_wqi_label(wqi_b, lang)}. "
+                f"**{a}** has **{sa.get('high_risk', 0)}** critical exceedances vs **{sb.get('high_risk', 0)}** in **{b}**.{note}",
+                f"**{a}** — {_wqi_label(wqi_a, lang)}, **{b}** — {_wqi_label(wqi_b, lang)}. "
+                f"Критических превышений: **{sa.get('high_risk', 0)}** в **{a}** и **{sb.get('high_risk', 0)}** в **{b}**.{note}",
+                f"**{a}** — {_wqi_label(wqi_a, lang)}, **{b}** — {_wqi_label(wqi_b, lang)}. "
+                f"Шектеуден асу: **{a}** — **{sa.get('high_risk', 0)}**, **{b}** — **{sb.get('high_risk', 0)}**.{note}",
+            )
+
+    if intent == "why_region" and regions_in_msg:
+        reg = regions_in_msg[0]
+        st = rs.get(reg, {})
+        wp = ctx.get("worst_pollutant", "—")
+        nat = _national_wqi(ctx)
+        wqi = st.get("mean_wqi")
+        if st:
+            vs_nat = ""
+            if nat is not None and wqi is not None:
+                if wqi > nat + 5:
+                    vs_nat = _pick(
+                        lang,
+                        " Water quality here is worse than the national average in this view.",
+                        " Качество воды здесь хуже среднего по стране в текущей выборке.",
+                        " Бұл ауданда су сапасы ағымдағы көруде республика орташа көрсеткішінен нашар.",
+                    )
+                elif wqi < nat - 5:
+                    vs_nat = _pick(
+                        lang,
+                        " This region performs better than the national average in this view.",
+                        " Этот регион лучше среднего по стране в текущей выборке.",
+                        " Бұл аудан ағымдағы көруде республика орташа көрсеткішінен жақсы.",
+                    )
+            return _pick(
+                lang,
+                f"**{reg}** faces elevated environmental pressure in the current selection.{vs_nat} "
+                f"**{wp}** is the dominant pollutant, with **{st.get('high_risk', 0)}** critical exceedances recorded.{note}",
+                f"**{reg}** испытывает повышенное экологическое давление в текущей выборке.{vs_nat} "
+                f"Доминирует **{wp}**, зафиксировано **{st.get('high_risk', 0)}** критических превышений.{note}",
+                f"**{reg}** ағымдағы таңдауда жоғары экологиялық қысымға тап болуда.{vs_nat} "
+                f"**{wp}** басым ластаушы, **{st.get('high_risk', 0)}** шектеуден асу тіркелген.{note}",
+            )
+
+    if intent == "cleanest":
+        best = ctx.get("best_wqi_region", "—")
+        worst = ctx.get("worst_wqi_region", "—")
+        return _pick(
+            lang,
+            f"**{best}** has the most favourable conditions in your selection. "
+            f"**{worst}** currently shows the highest environmental pressure.{note}",
+            f"**{best}** — наиболее благоприятная ситуация в выборке. "
+            f"**{worst}** испытывает наибольшее экологическое давление.{note}",
+            f"**{best}** — таңдаудағы ең қолайлы жағдай. "
+            f"**{worst}** — ең жоғары экологиялық қысым.{note}",
+        )
+
+    if regions_in_msg and intent in ("trend", "region", "general", "wqi"):
+        reg = regions_in_msg[0]
+        st = rs.get(reg, {})
+        if st:
+            yr_note = f" ({year_q})" if year_q else ""
+            return _pick(
+                lang,
+                f"**{reg}**{yr_note} shows {_wqi_label(st.get('mean_wqi'), lang)}. "
+                f"**{ctx.get('worst_pollutant', '—')}** is the main concern, with **{st.get('high_risk', 0)}** critical exceedances.{note}",
+                f"**{reg}**{yr_note}: {_wqi_label(st.get('mean_wqi'), lang)}. "
+                f"Основная проблема — **{ctx.get('worst_pollutant', '—')}**, **{st.get('high_risk', 0)}** критических превышений.{note}",
+                f"**{reg}**{yr_note}: {_wqi_label(st.get('mean_wqi'), lang)}. "
+                f"Негізгі мәселе — **{ctx.get('worst_pollutant', '—')}**, **{st.get('high_risk', 0)}** шектеуден асу.{note}",
+            )
 
     if intent == "help":
-        if ru:
-            return (
-                "Я отвечаю по **химическим показателям** загрязнения (WQI, риск, регионы, тренды) "
-                f"на основе текущих фильтров.{note}"
-            )
-        return (
-            f"I answer using **chemical pollution** indicators for your current filters.{note}"
+        return _pick(
+            lang,
+            f"I answer using **chemical pollution** indicators for your current filters.{note}",
+            f"Я отвечаю по **химическим показателям** загрязнения (WQI, риск, регионы, тренды) "
+            f"на основе текущих фильтров.{note}",
+            f"Мен ағымдағы сүзгілер бойынша **химиялық ластану** көрсеткіштері (WQI, тәуекел, аудандар, тренд) "
+            f"бойынша жауап беремін.{note}",
         )
 
     if intent == "trend":
@@ -245,128 +514,153 @@ def _rule_reply(message: str, ctx: dict[str, Any], lang: str) -> str | None:
         delta = ctx.get("wqi_trend_delta")
         yr = ctx.get("year_range", [])
         if direction and delta is not None and len(yr) == 2:
-            start_w = ctx.get("trend_start_wqi", "—")
-            end_w = ctx.get("trend_end_wqi", "—")
-            if ru:
-                word = {"deteriorating": "ухудшается", "improving": "улучшается", "stable": "стабильно"}[direction]
-                return (
-                    f"По химическим показателям качество **{word}**: WQI **{start_w}** → **{end_w}** "
-                    f"(Δ **{delta:+.2f}**, {yr[0]}–{yr[1]}, n={n:,}).{note} "
-                    "Выше WQI = больше загрязнение относительно ПДК."
-                )
-            return (
-                f"For **chemical indicators**, quality is **{direction}**: WQI **{start_w}** → **{end_w}** "
-                f"(Δ **{delta:+.2f}**, {yr[0]}–{yr[1]}, n={n:,}).{note} "
-                "Higher WQI = more pollution relative to MPC."
+            phrase = _trend_phrase(direction, lang)
+            return _pick(
+                lang,
+                f"In your selection, {phrase} between **{yr[0]}** and **{yr[1]}** "
+                f"(overall index shift {delta:+.1f} points).{note}",
+                f"В вашей выборке {phrase} с **{yr[0]}** по **{yr[1]}** "
+                f"(изменение индекса {delta:+.1f} пунктов).{note}",
+                f"Сіздің таңдауыңызда **{yr[0]}**–**{yr[1]}** аралығында {phrase} "
+                f"(индекс {delta:+.1f} пунктқа өзгерген).{note}",
             )
-        if ru:
-            return f"Недостаточно лет с химическими данными для тренда (нужно ≥ 2).{note}"
-        return f"Not enough years with chemical data for a trend (need ≥ 2).{note}"
+        return _pick(
+            lang,
+            f"Not enough years in the current selection to assess a clear trend.{note}",
+            f"Недостаточно лет в выборке для оценки тренда.{note}",
+            f"Анық тренд бағалау үшін таңдаудағы жылдар жеткіліксіз.{note}",
+        )
 
     if intent == "risk_region":
         leader = ctx.get("high_risk_leader_region")
         count = ctx.get("high_risk_leader_count", 0)
         mean_r = ctx.get("top_mean_ratio_region")
-        mean_v = ctx.get("top_mean_ratio")
         if leader:
-            if ru:
-                return (
-                    f"Больше всего записей **высокого риска** (отношение > 2× ПДК) в **{leader}**: **{count}** записей. "
-                    f"По **среднему** отношению к ПДК лидирует **{mean_r}** ({mean_v}) — это разные метрики.{note}"
+            extra = ""
+            if mean_r and mean_r != leader:
+                extra = _pick(
+                    lang,
+                    f" **{mean_r}** shows the highest average concentration relative to limits — a different measure of pressure.",
+                    f" **{mean_r}** имеет наибольшее среднее превышение относительно ПДК — другой показатель давления.",
+                    f" **{mean_r}** — орташа концентрация бойынша ең жоғары қысым (басқа метрика).",
                 )
-            return (
-                f"Most **high-risk records** (ratio > 2× MPC) are in **{leader}**: **{count}** records. "
-                f"Highest **mean ratio** is **{mean_r}** ({mean_v}) — these are different metrics.{note}"
+            return _pick(
+                lang,
+                f"**{leader}** concentrates the most critical pollution events in your selection "
+                f"(**{count}** exceedances above twice the regulatory limit).{extra}{note}",
+                f"**{leader}** — больше всего критических превышений в выборке "
+                f"(**{count}** случаев выше двойного ПДК).{extra}{note}",
+                f"**{leader}** — таңдаудағы ең көп шектеуден асу "
+                f"(**{count}** екі есе ШРК-дан жоғары).{extra}{note}",
             )
-        if ru:
-            return f"В текущей выборке нет записей с отношением > 2× ПДК.{note}"
-        return f"No records exceed 2× MPC in the current selection.{note}"
+        return _pick(
+            lang,
+            f"No critical exceedances (above twice the regulatory limit) appear in the current selection.{note}",
+            f"В текущей выборке нет критических превышений (выше двойного ПДК).{note}",
+            f"Ағымдағы таңдауда шектеуден екі есе асатын критикалық жағдайлар жоқ.{note}",
+        )
 
     if intent == "wqi":
-        if ru:
-            return (
-                f"Средний **WQI = {ctx['mean_wqi']}** по хим. показателям (n={n:,}). "
-                f"Лучший регион: **{ctx.get('best_wqi_region', '—')}** ({ctx.get('best_wqi', '—')}). "
-                f"Худший: **{ctx.get('worst_wqi_region', '—')}** ({ctx.get('worst_wqi', '—')}). "
-                f"WQI = (C/ПДК)×50; ниже = чище.{note}"
-            )
-        return (
-            f"Mean **WQI = {ctx['mean_wqi']}** for chemical indicators (n={n:,}). "
-            f"Best region: **{ctx.get('best_wqi_region', '—')}** ({ctx.get('best_wqi', '—')}). "
-            f"Worst: **{ctx.get('worst_wqi_region', '—')}** ({ctx.get('worst_wqi', '—')}). "
-            f"WQI = (C/MPC)×50; lower = cleaner.{note}"
+        worst = ctx.get("worst_wqi_region", "—")
+        best = ctx.get("best_wqi_region", "—")
+        return _pick(
+            lang,
+            f"Overall water quality in your selection reflects {_wqi_label(ctx.get('mean_wqi'), lang)}. "
+            f"**{worst}** faces the highest pressure; **{best}** is in the best condition.{note}",
+            f"Общая картина в выборке: {_wqi_label(ctx.get('mean_wqi'), lang)}. "
+            f"Наибольшее давление — **{worst}**, лучшая ситуация — **{best}**.{note}",
+            f"Таңдаудағы жалпы жағдай: {_wqi_label(ctx.get('mean_wqi'), lang)}. "
+            f"Ең жоғары қысым — **{worst}**, ең қолайлы — **{best}**.{note}",
         )
 
     if intent == "risk":
-        if ru:
-            return (
-                f"**Высокий риск** (> 2× ПДК): **{ctx['high_risk_pct']}%** записей. "
-                f"**Умеренный** (1–2×): **{ctx['moderate_risk_pct']}%**. "
-                f"Регион с наибольшим числом high-risk записей: **{ctx.get('high_risk_leader_region', '—')}** "
-                f"({ctx.get('high_risk_leader_count', 0)} шт.).{note}"
-            )
-        return (
-            f"**High risk** (> 2× MPC): **{ctx['high_risk_pct']}%** of records. "
-            f"**Moderate** (1–2×): **{ctx['moderate_risk_pct']}%**. "
-            f"Region with most high-risk records: **{ctx.get('high_risk_leader_region', '—')}** "
-            f"({ctx.get('high_risk_leader_count', 0)} records).{note}"
+        leader = ctx.get("high_risk_leader_region", "—")
+        return _pick(
+            lang,
+            f"**{ctx['high_risk_pct']}%** of records show critical exceedances (above twice the limit), "
+            f"and **{ctx['moderate_risk_pct']}%** are in the moderate range. "
+            f"**{leader}** needs the closest attention.{note}",
+            f"**{ctx['high_risk_pct']}%** записей — критические превышения, "
+            f"**{ctx['moderate_risk_pct']}%** — умеренный риск. "
+            f"Приоритет мониторинга — **{leader}**.{note}",
+            f"**{ctx['high_risk_pct']}%** жазба — критикалық асу, "
+            f"**{ctx['moderate_risk_pct']}%** — орташа тәуекел. "
+            f"**{leader}** — бақылау басымдығы.{note}",
         )
 
     if intent == "region":
-        leader = ctx.get("high_risk_leader_region") or ctx.get("top_mean_ratio_region", "—")
-        if ru:
-            return (
-                f"По high-risk записям: **{ctx.get('high_risk_leader_region', '—')}**. "
-                f"По среднему отношению к ПДК: **{ctx.get('top_mean_ratio_region', '—')}** "
-                f"({ctx.get('top_mean_ratio', '—')}). "
-                f"WQI: **{ctx.get('best_wqi_region', '—')}** (лучший) — **{ctx.get('worst_wqi_region', '—')}** (худший).{note}"
-            )
-        return (
-            f"By high-risk records: **{ctx.get('high_risk_leader_region', '—')}**. "
-            f"By mean ratio: **{ctx.get('top_mean_ratio_region', '—')}** ({ctx.get('top_mean_ratio', '—')}). "
-            f"WQI: **{ctx.get('best_wqi_region', '—')}** (best) — **{ctx.get('worst_wqi_region', '—')}** (worst).{note}"
+        leader = ctx.get("high_risk_leader_region", "—")
+        mean_r = ctx.get("top_mean_ratio_region", "—")
+        worst = ctx.get("worst_wqi_region", "—")
+        best = ctx.get("best_wqi_region", "—")
+        return _pick(
+            lang,
+            f"**{leader}** has the most critical pollution events. "
+            f"**{mean_r}** shows the strongest average concentration pressure. "
+            f"Best overall conditions: **{best}**; highest pressure: **{worst}**.{note}",
+            f"Больше всего критических случаев — **{leader}**. "
+            f"Наибольшее среднее давление — **{mean_r}**. "
+            f"Лучшие условия — **{best}**, наибольшее давление — **{worst}**.{note}",
+            f"Ең көп критикалық жағдай — **{leader}**. "
+            f"Орташа концентрация бойынша қысым — **{mean_r}**. "
+            f"Ең қолайлы — **{best}**, ең нашар — **{worst}**.{note}",
         )
 
     if intent == "pollutant":
         wp = ctx.get("worst_pollutant", "—")
-        wr = ctx.get("worst_pollutant_ratio", "—")
-        if ru:
-            return f"Самый проблемный загрязнитель: **{wp}** (ср. **{wr}** × ПДК).{note}"
-        return f"Most critical pollutant: **{wp}** (mean **{wr}** × MPC).{note}"
+        return _pick(
+            lang,
+            f"**{wp}** is the dominant pollutant in your current selection and drives most of the environmental pressure.{note}",
+            f"**{wp}** — главный загрязнитель в текущей выборке и основной источник экологического давления.{note}",
+            f"**{wp}** — ағымдағы таңдауда басым ластаушы және экологиялық қысымның негізгі көзі.{note}",
+        )
 
     if intent == "priorities":
-        parts = []
-        if ru:
-            parts.append(f"1. **Регион:** усилить контроль в **{ctx.get('high_risk_leader_region', '—')}** (лидер по high-risk записям).")
-            parts.append(f"2. **Загрязнитель:** приоритет **{ctx.get('worst_pollutant', '—')}** (ср. {ctx.get('worst_pollutant_ratio', '—')}× ПДК).")
-            if ctx.get("observed_pct", 0) > 90:
-                parts.append(
-                    f"3. **Данные:** {ctx['observed_pct']}% — уровень воды (Kazhydromet); "
-                    "для нормативных выводов нужны прямые хим. замеры."
-                )
-            else:
-                parts.append("3. **Данные:** расширить долю наблюдаемых химических измерений.")
-            return "\n\n".join(parts) + note
-        parts.append(f"1. **Region:** intensify monitoring in **{ctx.get('high_risk_leader_region', '—')}** (most high-risk records).")
-        parts.append(f"2. **Pollutant:** prioritize **{ctx.get('worst_pollutant', '—')}** (mean {ctx.get('worst_pollutant_ratio', '—')}× MPC).")
         if ctx.get("observed_pct", 0) > 90:
-            parts.append(
+            data_en = (
                 f"3. **Data:** {ctx['observed_pct']}% is water-level (Kazhydromet); "
                 "direct chemical sampling needed for regulatory conclusions."
             )
+            data_ru = (
+                f"3. **Данные:** {ctx['observed_pct']}% — уровень воды (Kazhydromet); "
+                "для нормативных выводов нужны прямые хим. замеры."
+            )
+            data_kk = (
+                f"3. **Деректер:** {ctx['observed_pct']}% — су деңгейі (Kazhydromet); "
+                "нормативтік қорытынды үшін тікелей химиялық өлшеу керек."
+            )
         else:
-            parts.append("3. **Data:** expand observed chemical measurement coverage.")
-        return "\n\n".join(parts) + note
+            data_en = "3. **Data:** expand observed chemical measurement coverage."
+            data_ru = "3. **Данные:** расширить долю наблюдаемых химических измерений."
+            data_kk = "3. **Деректер:** бақыланатын химиялық өлшеулерді кеңейту."
+        return _pick(
+            lang,
+            "\n\n".join([
+                f"1. **Region:** intensify monitoring in **{ctx.get('high_risk_leader_region', '—')}** (most high-risk records).",
+                f"2. **Pollutant:** prioritize **{ctx.get('worst_pollutant', '—')}** (mean {ctx.get('worst_pollutant_ratio', '—')}× MPC).",
+                data_en,
+            ]) + note,
+            "\n\n".join([
+                f"1. **Регион:** усилить контроль в **{ctx.get('high_risk_leader_region', '—')}** (лидер по high-risk записям).",
+                f"2. **Загрязнитель:** приоритет **{ctx.get('worst_pollutant', '—')}** (ср. {ctx.get('worst_pollutant_ratio', '—')}× ПДК).",
+                data_ru,
+            ]) + note,
+            "\n\n".join([
+                f"1. **Аудан:** **{ctx.get('high_risk_leader_region', '—')}** ауданында бақылауды күшейту (high-risk лидері).",
+                f"2. **Ластаушы:** **{ctx.get('worst_pollutant', '—')}** басым (орт. {ctx.get('worst_pollutant_ratio', '—')}× ШРК).",
+                data_kk,
+            ]) + note,
+        )
 
     if intent == "ml":
-        if ru:
-            return (
-                "Прогноз — вкладка **Forecast**: 8 моделей, TimeSeriesSplit CV. "
-                "При n≈5 годовых точек надёжнее **линейная регрессия**."
-            )
-        return (
-            "See **Forecast** tab: 8 models with TimeSeriesSplit CV. "
-            "With n≈5 annual points, **Linear Regression** is most reliable."
+        return _pick(
+            lang,
+            "Open the **Forecast Lab** section: 8 models with TimeSeriesSplit CV. "
+            "With n≈5 annual points, **Linear Regression** is most reliable.",
+            "Раздел **Лаборатория прогноза**: 8 моделей, TimeSeriesSplit CV. "
+            "При n≈5 годовых точек надёжнее **линейная регрессия**.",
+            "**Болжам зертханасы** бөлімі: 8 модель, TimeSeriesSplit CV. "
+            "n≈5 жылдық нүктеде **сызықты регрессия** сенімдірек.",
         )
 
     if intent == "data":
@@ -374,14 +668,14 @@ def _rule_reply(message: str, ctx: dict[str, Any], lang: str) -> str | None:
         mix_str = ", ".join(f"{k}: {v}%" for k, v in mix.items()) if mix else "—"
         hr_mix = ctx.get("high_risk_source_mix", {})
         hr_str = ", ".join(f"{k}: {v}%" for k, v in hr_mix.items()) if hr_mix else "—"
-        if ru:
-            return (
-                f"Вся выборка: {mix_str}. High-risk записи по источникам: {hr_str}. "
-                f"Всего {ctx['records_total']:,} записей.{note}"
-            )
-        return (
+        return _pick(
+            lang,
             f"Full selection: {mix_str}. High-risk records by source: {hr_str}. "
-            f"Total {ctx['records_total']:,} records.{note}"
+            f"Total {ctx['records_total']:,} records.{note}",
+            f"Вся выборка: {mix_str}. High-risk записи по источникам: {hr_str}. "
+            f"Всего {ctx['records_total']:,} записей.{note}",
+            f"Барлық таңдау: {mix_str}. High-risk жазбалар көздер бойынша: {hr_str}. "
+            f"Барлығы {ctx['records_total']:,} жазба.{note}",
         )
 
     return None
@@ -392,83 +686,218 @@ def _rule_reply_with_insights(message: str, ctx: dict[str, Any], insights: list[
     if specific:
         return specific
 
+    skip = set(INSIGHT_DISCLAIMERS.values())
     chem_insights = [
         i for i in insights
-        if "algorithmically" not in i.lower() and "алгоритм" not in i.lower()
+        if i not in skip and "algorithmically" not in i.lower() and "алгоритм" not in i.lower()
     ][:2]
     if chem_insights:
         body = "\n\n".join(f"• {b.replace('**', '')}" for b in chem_insights)
-        if lang == "ru":
-            return f"По текущим фильтрам:\n\n{body}\n\nУточните: WQI, риск, регион, тренд или приоритеты?"
-        return f"For your filters:\n\n{body}\n\nTry asking about: WQI, risk, region, trend, or priorities."
-
-    if lang == "ru":
-        return (
-            f"Сводка: WQI **{ctx['mean_wqi']}**, high-risk **{ctx['high_risk_pct']}%** "
-            f"(хим. данные, n={ctx.get('records_chemical', ctx['records']):,})."
+        return _pick(
+            lang,
+            f"For your filters:\n\n{body}\n\nTry asking about: WQI, risk, region, trend, or priorities?",
+            f"По текущим фильтрам:\n\n{body}\n\nУточните: WQI, риск, регион, тренд или приоритеты?",
+            f"Ағымдағы сүзгілер бойынша:\n\n{body}\n\nСұраңыз: WQI, тәуекел, аудан, тренд немесе басымдықтар?",
         )
+
+    worst = ctx.get("worst_wqi_region", "—")
+    wp = ctx.get("worst_pollutant", "—")
+    return _pick(
+        lang,
+        f"In your current view, water quality reflects {_wqi_label(ctx.get('mean_wqi'), lang)}. "
+        f"**{worst}** faces the highest pressure and **{wp}** is the main pollutant of concern.",
+        f"В текущей выборке — {_wqi_label(ctx.get('mean_wqi'), lang)}. "
+        f"Наибольшее давление — **{worst}**, главный загрязнитель — **{wp}**.",
+        f"Ағымдағы көруде — {_wqi_label(ctx.get('mean_wqi'), lang)}. "
+        f"Ең жоғары қысым **{worst}** ауданында, басым ластаушы — **{wp}**.",
+    )
+
+
+def _ollama_system_prompt(lang: str) -> str:
+    lang_name = {"en": "English", "ru": "Russian", "kk": "Kazakh (Cyrillic)"}.get(lang, "English")
     return (
-        f"Summary: WQI **{ctx['mean_wqi']}**, high-risk **{ctx['high_risk_pct']}%** "
-        f"(chemical data, n={ctx.get('records_chemical', ctx['records']):,})."
+        "You are the Environmental Intelligence Analyst for AquaMonitor — a Kazakhstan surface-water "
+        "quality intelligence platform used by environmental officers and policymakers.\n\n"
+        "Voice and style:\n"
+        "- Write as a senior environmental analyst, not a generic chatbot.\n"
+        "- Lead with the environmental finding, then supporting evidence from the context.\n"
+        "- Use region, basin, pollutant, and trend language appropriate for policy briefings.\n"
+        "- Prefer short paragraphs and bullet points when comparing regions or risks.\n"
+        "- Do NOT say you are ChatGPT, an AI assistant, or a language model.\n\n"
+        "Rules:\n"
+        "- Use ONLY facts from the JSON analytics context (filters, WQI, trends, hotspots, forecast).\n"
+        "- Higher WQI = worse pollution. Ratio > 2 = critical exceedance (high risk).\n"
+        "- If data is empty for the filters, say so and suggest widening the selection.\n"
+        "- Do not invent numbers, regions, or pollutants not present in the context.\n"
+        "- This is analytical guidance, not regulatory or legal advice.\n"
+        f"- Reply entirely in {lang_name}. Never switch language."
     )
 
 
-def _try_ollama(message: str, ctx: dict[str, Any], lang: str) -> str | None:
-    base = os.getenv("OLLAMA_BASE_URL", "").rstrip("/")
-    if not base:
-        return None
-    model = os.getenv("OLLAMA_MODEL", "llama3.2")
-    system = (
-        "You are AquaMonitor assistant for Kazakhstan water quality. "
-        "Use ONLY the JSON context. Chemical metrics exclude water-level proxies. "
-        "Higher WQI = worse pollution. High-risk = ratio > 2. "
-        "Do not invent numbers. Not regulatory advice."
+def _format_context_for_prompt(ctx: dict[str, Any]) -> str:
+    """Human-readable structured context block for the LLM."""
+    import json
+
+    lines = ["=== AquaMonitor Analytics Context ==="]
+    filters = ctx.get("active_filters") or {}
+    if filters:
+        lines.append("Active filters:")
+        for key in ("regions", "basins", "years", "pollutants", "sources"):
+            val = filters.get(key)
+            if val:
+                lines.append(f"  - {key}: {val}")
+
+    if ctx.get("empty"):
+        lines.append("Dataset: no records match the current filters.")
+    else:
+        lines.append(f"Records: {ctx.get('records_total', 0)} total, {ctx.get('records_chemical', 0)} chemical")
+        if ctx.get("mean_wqi") is not None:
+            lines.append(f"Mean WQI: {ctx['mean_wqi']} | High-risk share: {ctx.get('high_risk_pct')}%")
+        if ctx.get("worst_pollutant"):
+            lines.append(
+                f"Dominant pollutant: {ctx['worst_pollutant']} "
+                f"(ratio {ctx.get('worst_pollutant_ratio', '—')}× MPC)"
+            )
+        if ctx.get("trend_direction"):
+            yr = ctx.get("year_range", [])
+            lines.append(
+                f"Trend: {ctx['trend_direction']} (ΔWQI {ctx.get('wqi_trend_delta', '—')} "
+                f"from {yr[0] if yr else '?'} to {yr[-1] if yr else '?'})"
+            )
+        if ctx.get("high_risk_leader_region"):
+            lines.append(
+                f"High-risk leader: {ctx['high_risk_leader_region']} "
+                f"({ctx.get('high_risk_leader_count', 0)} critical exceedances)"
+            )
+        if ctx.get("best_wqi_region"):
+            lines.append(
+                f"Best WQI region: {ctx['best_wqi_region']} | "
+                f"Worst: {ctx.get('worst_wqi_region')}"
+            )
+
+    hotspots = ctx.get("pollution_hotspots") or []
+    if hotspots:
+        lines.append("Pollution hotspots:")
+        for h in hotspots[:3]:
+            lines.append(
+                f"  - {h.get('station')} ({h.get('basin')}): "
+                f"intensity {h.get('intensity')}, status {h.get('status')}"
+            )
+
+    basins = ctx.get("basin_analytics") or []
+    if basins:
+        lines.append("Basin summary (top pressure):")
+        for b in basins[:3]:
+            lines.append(
+                f"  - {b.get('basin')}: WQI {b.get('mean_wqi')}, "
+                f"max ratio {b.get('max_ratio')}, trend Δ {b.get('trend_wqi_delta')}"
+            )
+
+    fc = ctx.get("forecast") or {}
+    if fc.get("available"):
+        lines.append(
+            f"Forecast ({fc.get('target')}): {fc.get('recommended_model')} predicts "
+            f"{fc.get('predicted_next')} for {fc.get('forecast_year')}"
+        )
+    elif fc:
+        lines.append(f"Forecast: not available ({fc.get('reason', 'insufficient data')})")
+
+    lines.append("\nFull JSON context:")
+    lines.append(json.dumps(ctx, ensure_ascii=False, indent=2))
+    return "\n".join(lines)
+
+
+def _try_ollama(message: str, ctx: dict[str, Any], lang: str) -> tuple[str | None, str | None]:
+    """Returns (reply_text, model_name)."""
+    system = _ollama_system_prompt(lang)
+    user = f"{_format_context_for_prompt(ctx)}\n\nUser question:\n{message}"
+    return ollama_generate(system, user, lang=lang)
+
+
+FALLBACK_NOTICE = "Ollama model unavailable"
+
+
+def _dynamic_suggestions(ctx: dict[str, Any], lang: str) -> list[str]:
+    base = _suggestions(lang)
+    if ctx.get("empty"):
+        return base[:3]
+    extra: list[str] = []
+    wr = ctx.get("worst_wqi_region")
+    hr = ctx.get("high_risk_leader_region")
+    if wr:
+        extra.append(
+            _pick(lang, f"Why is {wr} stressed?", f"Почему {wr} под нагрузкой?", f"Неге {wr} ауыр жағдайда?")
+        )
+    if hr:
+        extra.append(
+            _pick(lang, f"Explain risk in {hr}", f"Объясни риск в {hr}", f"{hr} тәуекелін түсіндір")
+        )
+    extra.append(
+        _pick(lang, "Is water quality improving?", "Улучшается ли качество воды?", "Су сапасы жақсарып жатыр ма?")
     )
-    if lang == "ru":
-        system += " Reply in Russian."
-
-    payload = json.dumps({
-        "model": model,
-        "stream": False,
-        "messages": [
-            {"role": "system", "content": system},
-            {
-                "role": "user",
-                "content": f"Context:\n{json.dumps(ctx, ensure_ascii=False)}\n\nQuestion: {message}",
-            },
-        ],
-    }).encode("utf-8")
-
-    req = urllib.request.Request(
-        f"{base}/api/chat",
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            data = json.loads(resp.read().decode())
-            return data.get("message", {}).get("content", "").strip() or None
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError):
-        return None
+    return (extra + base)[:3]
 
 
-def chat(message: str, df: pd.DataFrame, lang: str = "en") -> dict[str, Any]:
-    """Answer a user message using filtered dashboard data."""
+def chat(
+    message: str,
+    df: pd.DataFrame,
+    lang: str = "kk",
+    *,
+    filters: dict[str, Any] | None = None,
+    hotspots: list[dict[str, Any]] | None = None,
+    basin_stats: list[dict[str, Any]] | None = None,
+    forecast: dict[str, Any] | None = None,
+    risk_alerts: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Answer a user message using Ollama + AquaMonitor context, with rule-based fallback."""
     message = (message or "").strip()
     if not message:
-        empty_msg = "Задайте вопрос о качестве воды." if lang == "ru" else "Ask a question about water quality."
-        return {"reply": empty_msg, "mode": "rules", "suggestions": _suggestions(lang)}
+        empty_msg = _pick(
+            lang,
+            "Ask a question about water quality.",
+            "Задайте вопрос о качестве воды.",
+            "Су сапасы туралы сұрақ қойыңыз.",
+        )
+        return {
+            "reply": empty_msg,
+            "suggestions": _suggestions(lang),
+            "confidence": "low",
+            "source": "fallback",
+            "model": None,
+            "ollama_available": ollama_available(),
+        }
 
-    ctx = build_context(df)
+    ctx = build_context(
+        df,
+        filters=filters,
+        hotspots=hotspots,
+        basin_stats=basin_stats,
+        forecast=forecast,
+        risk_alerts=risk_alerts,
+    )
     chem = _chemical_df(df)
-    insights = generate_insights(chem if not chem.empty else df) if not ctx.get("empty") else []
+    insights = generate_insights(chem if not chem.empty else df, lang=lang) if not ctx.get("empty") else []
+    suggestions = _dynamic_suggestions(ctx, lang)
 
-    ollama_reply = _try_ollama(message, ctx, lang)
+    ollama_reply, model = _try_ollama(message, ctx, lang)
     if ollama_reply:
         reply = f"{ollama_reply}\n\n_{_disclaimer(lang)}_"
-        return {"reply": reply, "mode": "ollama", "suggestions": _suggestions(lang)}
+        return {
+            "reply": reply,
+            "suggestions": suggestions,
+            "confidence": "high",
+            "source": "ollama",
+            "model": model,
+            "ollama_available": True,
+        }
 
-    reply = _rule_reply_with_insights(message, ctx, insights, lang)
-    reply = f"{reply}\n\n_{_disclaimer(lang)}_"
-    return {"reply": reply, "mode": "rules", "suggestions": _suggestions(lang)}
+    rule_body = _rule_reply_with_insights(message, ctx, insights, lang)
+    reply = f"**{FALLBACK_NOTICE}**\n\n{rule_body}\n\n_{_disclaimer(lang)}_"
+    return {
+        "reply": reply,
+        "suggestions": suggestions,
+        "confidence": "high" if ctx.get("records") else "low",
+        "source": "fallback",
+        "model": None,
+        "ollama_available": False,
+    }

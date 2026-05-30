@@ -11,7 +11,12 @@ def build_pollutant_region_heatmap(
     df: pd.DataFrame,
     template: str = "plotly_white",
     n_records: int | None = None,
+    labels: dict[str, str] | None = None,
 ) -> go.Figure:
+    lbl = labels or {}
+    px_l = lbl.get("pollutant", "Pollutant")
+    py_l = lbl.get("region", "Region")
+    pc_l = lbl.get("ratio", "Mean ratio (C/MPC)")
     """
     Build pollutant × region heatmap of mean pollution ratio.
 
@@ -33,21 +38,29 @@ def build_pollutant_region_heatmap(
     n = n_records or len(subset)
     fig = px.imshow(
         pivot,
-        labels=dict(x="Pollutant", y="Region", color="Mean ratio (C/MPC)"),
+        labels=dict(x=px_l, y=py_l, color=pc_l),
         color_continuous_scale="Viridis",
         aspect="auto",
-        title=f"Mean pollution ratio by pollutant and region (n={n:,})",
         template=template,
     )
     fig.update_layout(
-        xaxis_title="Pollutant",
-        yaxis_title="Region",
-        coloraxis_colorbar_title="Ratio (C/MPC)",
+        xaxis_title=px_l,
+        yaxis_title=py_l,
+        coloraxis_colorbar_title=pc_l,
     )
     return fig
 
 
-def build_yoy_wqi_delta(df: pd.DataFrame, template: str = "plotly_white") -> go.Figure:
+def build_yoy_wqi_delta(
+    df: pd.DataFrame,
+    template: str = "plotly_white",
+    labels: dict[str, str] | None = None,
+) -> go.Figure:
+    lbl = labels or {}
+    imp = lbl.get("improving", "Improving")
+    det = lbl.get("deteriorating", "Deteriorating")
+    rx = lbl.get("wqi_delta", "Δ WQI (last − first year)")
+    ry = lbl.get("region", "Region")
     """Year-over-year WQI change per region (improving vs deteriorating)."""
     if df.empty or "Year" not in df.columns:
         fig = go.Figure()
@@ -73,18 +86,15 @@ def build_yoy_wqi_delta(df: pd.DataFrame, template: str = "plotly_white") -> go.
         return fig
 
     delta_df = pd.DataFrame(deltas).sort_values("WQI_delta")
-    delta_df["direction"] = delta_df["WQI_delta"].apply(
-        lambda x: "Deteriorating" if x > 0 else "Improving"
-    )
+    delta_df["direction"] = delta_df["WQI_delta"].apply(lambda x: det if x > 0 else imp)
     fig = px.bar(
         delta_df,
         x="WQI_delta",
         y="Region",
         color="direction",
-        color_discrete_map={"Improving": "#10B981", "Deteriorating": "#EF4444"},
+        color_discrete_map={imp: "#10B981", det: "#EF4444"},
         orientation="h",
-        title="Year-over-year WQI change by region (last − first year in filter)",
-        labels={"WQI_delta": "Δ WQI (last year − first year)", "Region": "Region"},
+        labels={"WQI_delta": rx, "Region": ry},
         template=template,
     )
     return fig

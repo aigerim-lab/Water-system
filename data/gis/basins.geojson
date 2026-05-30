@@ -1,0 +1,131 @@
+{
+  "type": "FeatureCollection",
+  "name": "kazakhstan_hydrographic_basins",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Ertis",
+        "name": "Irtysh",
+        "display_name": "Irtysh (Ertis)",
+        "river": "Irtysh"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [74.50, 55.80], [76.00, 54.00], [78.00, 52.00], [82.00, 50.00],
+          [86.00, 48.00], [86.00, 46.00], [84.00, 45.00], [82.00, 46.00],
+          [80.00, 48.00], [76.00, 50.00], [74.00, 52.00], [74.50, 55.80]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Balkash-Alakol",
+        "name": "Balkhash-Alakol",
+        "display_name": "Balkhash–Alakol",
+        "river": "Ili"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [73.00, 45.00], [73.00, 48.00], [76.00, 48.00], [79.00, 47.50],
+          [83.00, 47.50], [83.00, 45.00], [80.00, 44.00], [76.00, 44.00], [73.00, 45.00]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Aralo-Syrdarya",
+        "name": "Aral–Syr Darya",
+        "display_name": "Aral–Syr Darya",
+        "river": "Syr Darya"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [59.00, 45.50], [59.00, 47.50], [62.50, 47.50], [68.00, 46.00],
+          [68.00, 41.00], [64.00, 41.00], [61.00, 43.00], [59.00, 45.50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Zhaiyk-Kaspian",
+        "name": "Ural–Caspian",
+        "display_name": "Ural–Caspian",
+        "river": "Ural"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [49.00, 45.50], [49.00, 48.50], [55.00, 48.50], [56.00, 52.00],
+          [52.00, 52.00], [49.00, 48.00], [49.00, 45.50]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Nura-Sarysu",
+        "name": "Nura–Sarysu",
+        "display_name": "Nura–Sarysu",
+        "river": "Nura"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [69.00, 49.00], [69.00, 52.50], [74.00, 52.50], [74.00, 49.00], [69.00, 49.00]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Shu-Talas",
+        "name": "Shu–Talas",
+        "display_name": "Shu–Talas (Chu–Talas)",
+        "river": "Shu"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [70.00, 42.00], [70.00, 45.00], [79.00, 45.00], [79.00, 42.00], [70.00, 42.00]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Tobyl-Torgay",
+        "name": "Tobol–Torgai",
+        "display_name": "Tobol–Torgai",
+        "river": "Tobol"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [62.00, 50.00], [62.00, 54.50], [70.00, 54.50], [70.00, 50.00], [62.00, 50.00]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "Esil",
+        "name": "Ishim (Esil)",
+        "display_name": "Ishim (Esil)",
+        "river": "Ishim"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [68.00, 50.00], [68.00, 55.50], [72.50, 55.50], [72.50, 50.00], [68.00, 50.00]
+        ]]
+      }
+    }
+  ]
+}

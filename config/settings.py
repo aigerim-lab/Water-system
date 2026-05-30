@@ -14,7 +14,15 @@ from typing import Dict, Tuple
 # ── Project paths ─────────────────────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "db"
+# Legacy folder name — holds Kazhydromet raw CSVs for dataset build (not the LLM runtime)
 OLLAMA_DIR = PROJECT_ROOT / "ollama"
+RAW_DATA_DIR = OLLAMA_DIR
+
+# ── Ollama (Environmental Intelligence Analyst) ───────────────────────────────
+OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_MODEL = ""  # empty = auto-detect from installed models
+OLLAMA_PREFERRED_MODELS = ("llama3.2", "llama3", "qwen2.5", "qwen", "mistral", "gemma2", "gemma")
+OLLAMA_TIMEOUT = 45.0
 GEOJSON_PATH = PROJECT_ROOT / "kz.json"
 
 # Canonical master dataset (built by data/build_dataset.py)
@@ -72,7 +80,7 @@ POLLUTANTS: Dict[str, PollutantSpec] = {
     "Oil Products": PollutantSpec(mpc=0.05, hazard_class=3),
 }
 
-# ── Kazhydromet station → basin / region ────────────────────────────────────
+# ── Kazhydromet station → basin / region / coordinates (lon, lat WGS84) ───────
 STATION_MAP: Dict[int, Tuple[str, str, str]] = {
     14002: ("Balkash-Alakol", "Almaty", "Lake Balkhash monitoring station"),
     11001: ("Ertis", "VKO", "Irtysh River — East Kazakhstan"),
@@ -82,6 +90,36 @@ STATION_MAP: Dict[int, Tuple[str, str, str]] = {
     16031: ("Aralo-Syrdarya", "Kyzylorda", "Syr Darya River — Kyzylorda"),
     12001: ("Tobyl-Torgay", "Kostanay", "Tobol River — Kostanay region"),
     19009: ("Zhaiyk-Kaspian", "Atyrau", "Ural River — Atyrau region"),
+}
+
+# Kazhydromet hydrological post coordinates (WGS84, verified against basin locations)
+STATION_COORDS: Dict[int, Tuple[float, float]] = {
+    11001: (82.61, 49.97),   # Ust-Kamenogorsk, Irtysh
+    16031: (65.52, 44.85),   # Syr Darya, Kyzylorda
+    15125: (73.76, 43.60),   # Shu River, Shu town
+    12001: (63.62, 53.21),   # Tobol, Kostanay
+    14002: (74.98, 46.82),   # Lake Balkhash
+    19009: (51.88, 47.12),   # Ural River, Atyrau
+    11242: (69.14, 54.87),   # Ishim, Petropavl
+    13046: (73.10, 49.80),   # Nura, Karaganda
+}
+
+GIS_DIR = PROJECT_ROOT / "data" / "gis"
+RIVERS_GEOJSON_PATH = GIS_DIR / "rivers.geojson"
+LAKES_GEOJSON_PATH = GIS_DIR / "lakes.geojson"
+BASINS_GEOJSON_PATH = GIS_DIR / "basins.geojson"
+
+# Basin display colors (keys match CSV Basin column exactly)
+BASIN_COLORS: Dict[str, str] = {
+    "Ertis": "#2dd4bf",
+    "Aralo-Syrdarya": "#38bdf8",
+    "Balkash-Alakol": "#a78bfa",
+    "Zhaiyk-Kaspian": "#fbbf24",
+    "Tobyl-Torgay": "#94a3b8",
+    "Shu-Talas": "#34d399",
+    "Esil": "#60a5fa",
+    "Nura-Sarysu": "#f472b6",
+    "Global_Reference": "#64748b",
 }
 
 # Normal water-level ranges (cm) for Kazhydromet ratio proxy

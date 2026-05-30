@@ -1,0 +1,84 @@
+/* Risk dashboard, WQI education (active journey sections) */
+
+.risk-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.risk-box {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.risk-box span { font-size: 0.75rem; color: var(--text-muted); }
+.risk-box strong { font-family: var(--font-data); font-size: 2rem; }
+.risk-box em { font-size: 0.8125rem; color: var(--text-faint); font-style: normal; }
+
+.risk-box--crit strong { color: var(--crit); }
+.risk-box--warn strong { color: var(--warn); }
+
+.risk-table-wrap { padding: 0.5rem; overflow-x: auto; }
+
+.wqi-edu {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.wqi-edu__scale {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wqi-edu__step {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-ui);
+  transition: all 0.2s;
+}
+
+.wqi-edu__step.active,
+.wqi-edu__step:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--text);
+}
+
+.wqi-edu__range {
+  font-family: var(--font-data);
+  font-size: 0.8125rem;
+  color: var(--accent);
+}
+
+.wqi-edu__detail {
+  padding: 1.25rem;
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--accent-dim);
+}
+
+.wqi-edu__detail h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: 0.65rem;
+}
+
+.forecast-lab { padding: 1.5rem; }
+
+@media (max-width: 900px) {
+  .wqi-edu { grid-template-columns: 1fr; }
+}

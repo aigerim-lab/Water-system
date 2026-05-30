@@ -12,8 +12,10 @@ class FilterRequest(BaseModel):
 
     sources: Optional[List[str]] = Field(default=None, description="data_source values")
     regions: Optional[List[str]] = None
+    basins: Optional[List[str]] = None
     years: Optional[List[int]] = None
     pollutants: Optional[List[str]] = None
+    lang: Literal["en", "ru", "kk"] = "kk"
 
 
 class CompareRequest(BaseModel):
@@ -23,6 +25,7 @@ class CompareRequest(BaseModel):
     year_b: int
     sources: Optional[List[str]] = None
     regions: Optional[List[str]] = None
+    basins: Optional[List[str]] = None
     years: Optional[List[int]] = None
     pollutants: Optional[List[str]] = None
 
@@ -33,4 +36,4 @@ class MLRequest(FilterRequest):
 
 class ChatRequest(FilterRequest):
     message: str = Field(..., min_length=1, max_length=2000)
-    lang: Literal["en", "ru"] = "en"
+    lang: Literal["en", "ru", "kk"] = "kk"
