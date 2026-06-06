@@ -274,6 +274,7 @@ export function WaterExperience({
                 subtitle={t('analytics.trendSub')}
                 figure={trendFigure}
                 plotLayout={plotLayout}
+                chartKey={`trend-${yearFocus}`}
                 tall
               />
             </StorySection>

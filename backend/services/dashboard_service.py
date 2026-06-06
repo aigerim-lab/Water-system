@@ -21,7 +21,7 @@ from analytics.gis_layers import basin_stats, pollution_hotspots
 from analytics.chart_narratives import chart_narratives
 from analytics.chat_assistant import chat as chat_assistant
 from analytics.i18n_content import LIMITATIONS_I18N, META_BANNERS, ML_DISCLAIMERS, WHY_NOT_DL, chart_labels, norm_lang
-from analytics.public_facts import public_facts
+from analytics.plotly_json import figure_to_plain_dict
 from analytics.ml_engine import (
     comparison_df_from_records,
     prepare_yearly_series,
@@ -345,7 +345,7 @@ class DashboardService:
         fig_yoy = build_yoy_wqi_delta(df, template=template, labels=lbl)
 
         def _chart_json(fig: go.Figure) -> dict | None:
-            payload = json.loads(fig.to_json())
+            payload = figure_to_plain_dict(fig)
             return payload if payload.get("data") else None
 
         out: dict[str, Any] = {
