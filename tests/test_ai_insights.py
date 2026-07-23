@@ -1,4 +1,4 @@
-"""Tests for rule-based AI insights."""
+"""Tests for rule-based insights."""
 
 from __future__ import annotations
 

@@ -19,6 +19,7 @@ frontend/dist/
 .DS_Store
 .idea/
 .vscode/
+.cursor/
 *.log
 
 # Thesis asset bundle (screenshots and thesis figures — local only)

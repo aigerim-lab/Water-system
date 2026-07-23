@@ -642,7 +642,7 @@ def main() -> None:
     st.plotly_chart(fig_yoy, use_container_width=True)
     card_close()
 
-    section_header("💡 AI Insights (rule-based)")
+    section_header("💡 Insights (rule-based)")
     card_open()
     for line in generate_insights(filtered_df):
         st.markdown(line)
